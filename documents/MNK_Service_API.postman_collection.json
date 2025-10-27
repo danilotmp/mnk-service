@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "MNK Service API",
+    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "mnk-service-001"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "    pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "company-code",
+                "value": "COMP001",
+                "description": "Código de la empresa (multiempresa)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "login"]
+            },
+            "description": "Iniciar sesión y obtener tokens JWT"
+          },
+          "response": [
+            {
+              "name": "Login exitoso",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/seguridades/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "seguridades", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid-del-usuario\",\n      \"email\": \"admin@example.com\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"User\",\n      \"companyId\": \"uuid-de-empresa\"\n    }\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Inicio de sesión exitoso\",\n    \"details\": null\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Registro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "    pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "company-code",
+                "value": "COMP001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "register"]
+            },
+            "description": "Registrar nuevo usuario"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "company-code",
+                "value": "COMP001"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "refresh-token"]
+            },
+            "description": "Refrescar token de acceso"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "company-code",
+                "value": "COMP001"
+              },
+              {
+                "key": "user-id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "app-source",
+                "value": "mobile"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "profile"]
+            },
+            "description": "Obtener perfil del usuario autenticado (requiere token)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Obtener Usuario Actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "company-code",
+                "value": "COMP001"
+              },
+              {
+                "key": "user-id",
+                "value": "{{userId}}"
+              },
+              {
+                "key": "app-source",
+                "value": "mobile"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "me"]
+            },
+            "description": "Obtener información del usuario autenticado"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+
