@@ -5,7 +5,8 @@ import { UsuarioRepository } from '../../infrastructure/repositories/usuario.rep
 import { LoginDto } from '../../presentation/dto/login.dto';
 import { RegisterDto } from '../../presentation/dto/register.dto';
 import { RefreshTokenDto } from '../../presentation/dto/refresh-token.dto';
-import { createSuccessResponse, createErrorResponse } from '@/common/dto/response.dto';
+import { ResponseHelper } from '@/common/messages/response.helper';
+import { MessageCode } from '@/common/messages/message-codes';
 import * as bcrypt from 'bcrypt';
 
 /**
@@ -18,33 +19,46 @@ export class AuthService {
     private usuarioRepository: UsuarioRepository,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private responseHelper: ResponseHelper,
   ) {}
 
   /**
    * Iniciar sesión y generar tokens JWT
    */
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, lang: string = 'es') {
     // Buscar usuario por email
     const usuario = await this.usuarioRepository.findByEmail(loginDto.email);
     if (!usuario) {
-      throw new UnauthorizedException(
-        createErrorResponse('Credenciales inválidas', 'El email o contraseña son incorrectos', 401),
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.INVALID_CREDENTIALS,
+        lang,
+        'El email o contraseña son incorrectos',
+        401,
       );
+      throw new UnauthorizedException(errorResponse);
     }
 
     // Verificar contraseña
     const isPasswordValid = await bcrypt.compare(loginDto.password, usuario.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        createErrorResponse('Credenciales inválidas', 'El email o contraseña son incorrectos', 401),
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.INVALID_CREDENTIALS,
+        lang,
+        'El email o contraseña son incorrectos',
+        401,
       );
+      throw new UnauthorizedException(errorResponse);
     }
 
     // Validar que el usuario esté activo
     if (!usuario.isActive) {
-      throw new UnauthorizedException(
-        createErrorResponse('Usuario inactivo', 'Su cuenta ha sido desactivada', 403),
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.USER_INACTIVE,
+        lang,
+        null,
+        403,
       );
+      throw new UnauthorizedException(errorResponse);
     }
 
     // Generar tokens
@@ -54,7 +68,7 @@ export class AuthService {
     usuario.lastLogin = new Date();
     await this.usuarioRepository.save(usuario);
 
-    return createSuccessResponse(
+    return await this.responseHelper.successResponse(
       {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -66,20 +80,25 @@ export class AuthService {
           companyId: usuario.companyId,
         },
       },
-      'Inicio de sesión exitoso',
+      MessageCode.LOGIN_SUCCESS,
+      lang,
     );
   }
 
   /**
    * Registrar nuevo usuario
    */
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto, lang: string = 'es') {
     // Verificar si el email ya existe
     const existingUser = await this.usuarioRepository.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new BadRequestException(
-        createErrorResponse('Email ya registrado', 'Este email ya está en uso', 400),
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.EMAIL_EXISTS,
+        lang,
+        null,
+        400,
       );
+      throw new BadRequestException(errorResponse);
     }
 
     // Hashear contraseña
@@ -102,7 +121,7 @@ export class AuthService {
     // Generar tokens
     const tokens = await this.generateTokens(savedUsuario);
 
-    return createSuccessResponse(
+    return await this.responseHelper.successResponse(
       {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
@@ -114,14 +133,15 @@ export class AuthService {
           companyId: savedUsuario.companyId,
         },
       },
-      'Registro exitoso',
+      MessageCode.REGISTER_SUCCESS,
+      lang,
     );
   }
 
   /**
    * Refrescar token de acceso usando refresh token
    */
-  async refreshToken(refreshTokenDto: RefreshTokenDto) {
+  async refreshToken(refreshTokenDto: RefreshTokenDto, lang: string = 'es') {
     try {
       // Verificar el refresh token
       const payload = this.jwtService.verify(refreshTokenDto.refreshToken, {
@@ -131,25 +151,34 @@ export class AuthService {
       // Buscar usuario
       const usuario = await this.usuarioRepository.findOne(payload.sub);
       if (!usuario || !usuario.isActive) {
-        throw new UnauthorizedException(
-          createErrorResponse('Token inválido', 'El refresh token no es válido', 401),
+        const errorResponse = await this.responseHelper.errorResponse(
+          MessageCode.TOKEN_INVALID,
+          lang,
+          'El refresh token no es válido',
+          401,
         );
+        throw new UnauthorizedException(errorResponse);
       }
 
       // Generar nuevos tokens
       const tokens = await this.generateTokens(usuario);
 
-      return createSuccessResponse(
+      return await this.responseHelper.successResponse(
         {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         },
-        'Token refrescado exitosamente',
+        MessageCode.TOKEN_REFRESHED,
+        lang,
       );
     } catch (error) {
-      throw new UnauthorizedException(
-        createErrorResponse('Token inválido o expirado', error.message, 401),
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.TOKEN_EXPIRED,
+        lang,
+        error.message,
+        401,
       );
+      throw new UnauthorizedException(errorResponse);
     }
   }
 

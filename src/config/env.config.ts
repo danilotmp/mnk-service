@@ -2,6 +2,9 @@ export const envConfig = () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   
+  // i18n Configuration
+  defaultLanguage: process.env.DEFAULT_LANGUAGE || 'es',
+  
   // JWT Configuration
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
@@ -20,6 +23,11 @@ export const envConfig = () => ({
     database: process.env.DB_DATABASE || 'mnk_service.db',
     synchronize: process.env.DB_SYNCHRONIZE === 'true' || true,
     logging: process.env.DB_LOGGING === 'true' || false,
+  },
+  
+  // Taxes Configuration
+  taxes: {
+    defaultIVA: parseFloat(process.env.DEFAULT_IVA) || 12,
   },
 });
 

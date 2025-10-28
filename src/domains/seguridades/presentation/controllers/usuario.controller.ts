@@ -17,7 +17,8 @@ export class UsuarioController {
   @ApiResponse({ status: 200, description: 'Usuario obtenido exitosamente' })
   @ApiResponse({ status: 401, description: 'No autenticado' })
   async getCurrentUser(@Request() req) {
-    return this.usuarioService.getProfile(req.user.userId);
+    const lang = req.headers['accept-language'] || 'es';
+    return this.usuarioService.getProfile(req.user.userId, lang);
   }
 }
 

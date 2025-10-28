@@ -1,0 +1,18 @@
+{
+  "INTERNAL_ERROR": "Internal server error",
+  "UNAUTHORIZED": "Unauthorized",
+  "FORBIDDEN": "Forbidden",
+  "NOT_FOUND": "Resource not found",
+  "VALIDATION_ERROR": "Validation error",
+  "INVALID_CREDENTIALS": "Invalid credentials",
+  "USER_INACTIVE": "Your account has been deactivated",
+  "TOKEN_EXPIRED": "Token expired",
+  "TOKEN_INVALID": "Invalid token",
+  "EMAIL_EXISTS": "Email already in use",
+  "INVALID_EMAIL": "Invalid email",
+  "INVALID_PASSWORD": "Invalid password",
+  "PASSWORD_TOO_SHORT": "Password must be at least 6 characters",
+  "USER_NOT_FOUND": "User not found",
+  "COMPANY_NOT_FOUND": "Company not found",
+  "BRANCH_NOT_FOUND": "Branch not found"
+}

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
+import { MessagesModule } from '@/common/messages/messages.module';
 import { SeguridadesController } from './presentation/controllers/seguridades.controller';
 import { UsuarioController } from './presentation/controllers/usuario.controller';
 import { AuthService } from './application/services/auth.service';
@@ -27,6 +28,7 @@ import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
         },
       }),
     }),
+    MessagesModule, // Importar MessagesModule para tener acceso a ResponseHelper
   ],
   controllers: [SeguridadesController, UsuarioController],
   providers: [

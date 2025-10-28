@@ -33,8 +33,9 @@ export class SeguridadesController {
   @ApiOperation({ summary: 'Iniciar sesión' })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.authService.login(loginDto, lang);
   }
 
   @Post('register')
@@ -42,8 +43,9 @@ export class SeguridadesController {
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
   @ApiResponse({ status: 201, description: 'Registro exitoso' })
   @ApiResponse({ status: 400, description: 'Error en los datos' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.authService.register(registerDto, lang);
   }
 
   @Post('refresh-token')
@@ -51,8 +53,9 @@ export class SeguridadesController {
   @ApiOperation({ summary: 'Refrescar token de acceso' })
   @ApiResponse({ status: 200, description: 'Token refrescado exitosamente' })
   @ApiResponse({ status: 401, description: 'Token inválido' })
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto);
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.authService.refreshToken(refreshTokenDto, lang);
   }
 
   @Get('profile')

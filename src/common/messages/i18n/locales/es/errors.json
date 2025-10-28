@@ -1,0 +1,19 @@
+{
+  "INTERNAL_ERROR": "Error interno del servidor",
+  "UNAUTHORIZED": "No autenticado",
+  "FORBIDDEN": "Sin permisos",
+  "NOT_FOUND": "Recurso no encontrado",
+  "VALIDATION_ERROR": "Error de validación",
+  "INVALID_CREDENTIALS": "Credenciales inválidas",
+  "USER_INACTIVE": "Su cuenta ha sido desactivada",
+  "TOKEN_EXPIRED": "Token expirado",
+  "TOKEN_INVALID": "Token inválido",
+  "EMAIL_EXISTS": "Este email ya está en uso",
+  "INVALID_EMAIL": "Email inválido",
+  "INVALID_PASSWORD": "Contraseña inválida",
+  "PASSWORD_TOO_SHORT": "La contraseña debe tener al menos 6 caracteres",
+  "USER_NOT_FOUND": "Usuario no encontrado",
+  "COMPANY_NOT_FOUND": "Empresa no encontrada",
+  "BRANCH_NOT_FOUND": "Sucursal no encontrada"
+}
+

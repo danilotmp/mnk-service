@@ -26,6 +26,10 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 ### 🌐 Endpoints Públicos vs Privados
 - **ENDPOINTS_PUBLICOS_PRIVADOS.md** - Arquitectura de endpoints públicos y privados
 
+### 🌍 Sistema de Mensajes i18n
+- **GUIA_I18N_MENSAJES.md** - Guía completa del sistema de mensajes multilenguaje
+- **RESUMEN_IMPLEMENTACION_I18N.md** - Resumen de lo implementado
+
 ### 📋 Contexto del Proyecto
 - **Planteamiento.docx** - Documento original con el planteamiento del proyecto
 - **CONTEXT.docx** - Documento con el contexto del proyecto

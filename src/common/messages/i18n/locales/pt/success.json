@@ -1,0 +1,9 @@
+{
+  "SUCCESS": "Operação bem-sucedida",
+  "USER_CREATED": "Usuário criado com sucesso",
+  "LOGIN_SUCCESS": "Login bem-sucedido",
+  "REGISTER_SUCCESS": "Registro bem-sucedido",
+  "TOKEN_REFRESHED": "Token atualizado com sucesso",
+  "PROFILE_UPDATED": "Perfil atualizado com sucesso",
+  "LOGOUT_SUCCESS": "Logout realizado com sucesso"
+}
