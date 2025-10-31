@@ -8,6 +8,27 @@ Este documento explica cómo funciona el sistema de mensajes centralizados y mul
 
 Centralizar todos los mensajes de la aplicación en un solo lugar, soportar múltiples idiomas y facilitar el mantenimiento.
 
+## 🔑 Separación de Responsabilidades
+
+### `description` (Mensaje para el Usuario)
+- ✅ **Traducido** según el idioma del cliente (`Accept-Language`)
+- ✅ **Amigable** y comprensible para el usuario final
+- ✅ **Simple** y directo
+- 📝 Ejemplo: "Credenciales inválidas" (es), "Invalid credentials" (en)
+
+### `details` (Información Técnica)
+- ❌ **NO se traduce** - Mantiene el idioma técnico original (inglés/español técnico)
+- 🔧 **Técnico** - Información para debugging/tracking
+- 📊 **Estructurado** - Objeto JSON con información de error técnico
+- 🚫 **No tergiversar** - Mantiene el error original para facilitar solución
+- 📝 Ejemplo: `{ error: 'USER_NOT_FOUND', email: '...', message: 'User not found in database' }`
+
+### Principios
+1. **`description`**: Para mostrar al usuario final (traducido)
+2. **`details`**: Para debugging/tracking/logging (técnico, no traducir)
+3. **No agregar latencia**: Las traducciones son rápidas (no consulta DB)
+4. **No tergiversar información técnica**: Los errores técnicos se mantienen originales
+
 ## 📁 Estructura de Archivos
 
 ```
@@ -126,12 +147,20 @@ throw new UnauthorizedException(
 ```typescript
 const errorResponse = await this.responseHelper.errorResponse(
   MessageCode.INVALID_CREDENTIALS,
-  'es',  // Idioma
-  'Detalle técnico',  // Detalles opcionales
+  lang,  // Idioma (detectado del header Accept-Language)
+  {
+    error: 'USER_NOT_FOUND',
+    email: loginDto.email,
+    message: 'User not found in database',
+  },  // Detalles técnicos (NO traducir, mantener en inglés/español técnico)
   401
 );
 throw new UnauthorizedException(errorResponse);
 ```
+
+**⚠️ Importante:**
+- `description`: Se traduce automáticamente según `lang`
+- `details`: **NO se traduce**, mantener en inglés/español técnico para debugging
 
 ### Ejemplo Completo en Service
 
@@ -151,7 +180,11 @@ export class AuthService {
       const errorResponse = await this.responseHelper.errorResponse(
         MessageCode.INVALID_CREDENTIALS,  // ← Código
         lang,                                // ← Idioma
-        'El email o contraseña son incorrectos',  // ← Detalles técnicos
+        {  // ← Detalles técnicos (NO traducir)
+          error: 'USER_NOT_FOUND',
+          email: loginDto.email,
+          message: 'User not found in database',
+        },
         401
       );
       throw new UnauthorizedException(errorResponse);
@@ -165,6 +198,7 @@ export class AuthService {
       MessageCode.LOGIN_SUCCESS,     // ← Código
       lang,                          // ← Idioma
       200                            // ← Status code
+      // Nota: En éxito, details es null (no hay detalles técnicos)
     );
   }
 }
@@ -287,13 +321,19 @@ async getProductos(@Request() req) {
 
 ### Respuestas según el Idioma
 
+#### Ejemplo 1: Respuesta de Éxito
+
 **Con `Accept-Language: es`:**
 ```json
 {
-  "data": { ... },
+  "data": {
+    "accessToken": "eyJhbGc...",
+    "refreshToken": "eyJhbGc...",
+    "user": { ... }
+  },
   "result": {
     "statusCode": 200,
-    "description": "Inicio de sesión exitoso",
+    "description": "Inicio de sesión exitoso",  ← Traducido
     "details": null
   }
 }
@@ -305,23 +345,33 @@ async getProductos(@Request() req) {
   "data": { ... },
   "result": {
     "statusCode": 200,
-    "description": "Login successful",
+    "description": "Login successful",  ← Traducido
     "details": null
   }
 }
 ```
 
-**Con `Accept-Language: pt`:**
+#### Ejemplo 2: Respuesta de Error (Detalles Técnicos)
+
+**Con `Accept-Language: es` o `en` o `pt`:**
 ```json
 {
-  "data": { ... },
+  "data": null,
   "result": {
-    "statusCode": 200,
-    "description": "Login bem-sucedido",
-    "details": null
+    "statusCode": 401,
+    "description": "Credenciales inválidas",  ← Traducido según Accept-Language
+    "details": {  ← NO se traduce (mantiene inglés/español técnico)
+      "error": "USER_NOT_FOUND",
+      "email": "admin@mnksolutions.com",
+      "message": "User not found in database"
+    }
   }
 }
 ```
+
+**Importante:**
+- `description`: Cambia según `Accept-Language` (es: "Credenciales inválidas", en: "Invalid credentials")
+- `details`: **NO cambia**, siempre en inglés/español técnico para debugging
 
 ### Nota Importante
 

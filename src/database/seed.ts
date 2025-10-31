@@ -3,6 +3,11 @@ import * as bcrypt from 'bcrypt';
 import { CompanyEntity } from '../domains/seguridades/infrastructure/entities/company.entity';
 import { BranchEntity } from '../domains/seguridades/infrastructure/entities/branch.entity';
 import { UsuarioEntity } from '../domains/seguridades/infrastructure/entities/usuario.entity';
+import { RoleEntity } from '../domains/seguridades/infrastructure/entities/role.entity';
+import { PermissionEntity, PermissionType } from '../domains/seguridades/infrastructure/entities/permission.entity';
+import { UserRoleEntity } from '../domains/seguridades/infrastructure/entities/user-role.entity';
+import { RolePermissionEntity } from '../domains/seguridades/infrastructure/entities/role-permission.entity';
+import { MenuItemEntity } from '../domains/seguridades/infrastructure/entities/menu-item.entity';
 
 /**
  * Script de seeding para poblar la base de datos con datos de prueba
@@ -26,6 +31,11 @@ async function seed() {
     const companyRepository = AppDataSource.getRepository(CompanyEntity);
     const branchRepository = AppDataSource.getRepository(BranchEntity);
     const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
+    const roleRepository = AppDataSource.getRepository(RoleEntity);
+    const permissionRepository = AppDataSource.getRepository(PermissionEntity);
+    const userRoleRepository = AppDataSource.getRepository(UserRoleEntity);
+    const rolePermissionRepository = AppDataSource.getRepository(RolePermissionEntity);
+    const menuItemRepository = AppDataSource.getRepository(MenuItemEntity);
 
     // Verificar si ya existen datos
     const existingCompany = await companyRepository.findOne({ where: { code: 'MNK' } });
@@ -120,7 +130,135 @@ async function seed() {
     const savedBranchGuayaquil = await branchRepository.save(branchGuayaquil);
     console.log(`✅ Sucursal creada: ${savedBranchGuayaquil.name} (ID: ${savedBranchGuayaquil.id})`);
 
-    // 3. Crear Usuarios
+    // 3. Crear Permisos
+    console.log('🔐 Creando permisos...');
+
+    // Permisos de Página (PAGE)
+    const pagePermissions = [
+      { code: 'home', name: 'Inicio', route: '/', menuId: 'home', isPublic: true },
+      { code: 'explore', name: 'Explorar', route: '/main/explore', menuId: 'explore', isPublic: false },
+      { code: 'products', name: 'Productos', route: '/products', menuId: 'products', isPublic: false },
+      { code: 'accounts', name: 'Cuentas', route: '/accounts', menuId: 'accounts', isPublic: false },
+      { code: 'loans', name: 'Préstamos', route: '/loans', menuId: 'loans', isPublic: false },
+      { code: 'cards', name: 'Tarjetas', route: '/cards', menuId: 'cards', isPublic: false },
+      { code: 'services', name: 'Más Servicios', route: '/services', menuId: 'services', isPublic: false },
+      { code: 'contact', name: 'Contacto', route: '/main/contact', menuId: 'contact', isPublic: true },
+    ];
+
+    const savedPagePermissions: PermissionEntity[] = [];
+    for (const perm of pagePermissions) {
+      const permission = permissionRepository.create({
+        code: perm.code,
+        name: perm.name,
+        type: PermissionType.PAGE,
+        resource: perm.code,
+        route: perm.route,
+        menuId: perm.menuId,
+        isPublic: perm.isPublic,
+        isActive: true,
+        isSystem: true,
+      });
+      const saved = await permissionRepository.save(permission);
+      savedPagePermissions.push(saved);
+    }
+    console.log(`✅ ${savedPagePermissions.length} permisos de página creados`);
+
+    // Permisos de Acción (ACTION)
+    const actionPermissions = [
+      // Usuarios
+      { code: 'users.view', name: 'Ver usuarios', resource: 'users', action: 'view' },
+      { code: 'users.create', name: 'Crear usuarios', resource: 'users', action: 'create' },
+      { code: 'users.edit', name: 'Editar usuarios', resource: 'users', action: 'edit' },
+      { code: 'users.delete', name: 'Eliminar usuarios', resource: 'users', action: 'delete' },
+      // Roles
+      { code: 'roles.view', name: 'Ver roles', resource: 'roles', action: 'view' },
+      { code: 'roles.create', name: 'Crear roles', resource: 'roles', action: 'create' },
+      { code: 'roles.edit', name: 'Editar roles', resource: 'roles', action: 'edit' },
+      { code: 'roles.delete', name: 'Eliminar roles', resource: 'roles', action: 'delete' },
+      // Permisos
+      { code: 'permissions.view', name: 'Ver permisos', resource: 'permissions', action: 'view' },
+      { code: 'permissions.manage', name: 'Gestionar permisos', resource: 'permissions', action: 'manage' },
+    ];
+
+    const savedActionPermissions: PermissionEntity[] = [];
+    for (const perm of actionPermissions) {
+      const permission = permissionRepository.create({
+        code: perm.code,
+        name: perm.name,
+        type: PermissionType.ACTION,
+        resource: perm.resource,
+        action: perm.action,
+        isPublic: false,
+        isActive: true,
+        isSystem: true,
+      });
+      const saved = await permissionRepository.save(permission);
+      savedActionPermissions.push(saved);
+    }
+    console.log(`✅ ${savedActionPermissions.length} permisos de acción creados`);
+
+    // 4. Crear Roles
+    console.log('👥 Creando roles...');
+
+    // Rol Admin
+    const adminRole = roleRepository.create({
+      companyId: savedCompany.id,
+      name: 'admin',
+      displayName: 'Administrador',
+      description: 'Rol de administrador con todos los permisos',
+      isActive: true,
+      isSystem: true,
+    });
+    const savedAdminRole = await roleRepository.save(adminRole);
+    console.log(`✅ Rol creado: ${savedAdminRole.displayName}`);
+
+    // Asignar todos los permisos al rol admin
+    for (const permission of [...savedPagePermissions, ...savedActionPermissions]) {
+      const rolePermission = rolePermissionRepository.create({
+        roleId: savedAdminRole.id,
+        permissionId: permission.id,
+        isActive: true,
+      });
+      await rolePermissionRepository.save(rolePermission);
+    }
+
+    // Rol Usuario
+    const userRole = roleRepository.create({
+      companyId: savedCompany.id,
+      name: 'usuario',
+      displayName: 'Usuario',
+      description: 'Rol de usuario básico',
+      isActive: true,
+      isSystem: true,
+    });
+    const savedUserRole = await roleRepository.save(userRole);
+    console.log(`✅ Rol creado: ${savedUserRole.displayName}`);
+
+    // Asignar permisos básicos al rol usuario (solo lectura)
+    const userPermissions = [
+      'home',
+      'explore',
+      'products',
+      'accounts',
+      'loans',
+      'cards',
+      'services',
+      'contact',
+      'users.view',
+    ];
+    for (const permCode of userPermissions) {
+      const permission = [...savedPagePermissions, ...savedActionPermissions].find((p) => p.code === permCode);
+      if (permission) {
+        const rolePermission = rolePermissionRepository.create({
+          roleId: savedUserRole.id,
+          permissionId: permission.id,
+          isActive: true,
+        });
+        await rolePermissionRepository.save(rolePermission);
+      }
+    }
+
+    // 5. Crear Usuarios
     console.log('👤 Creando usuarios...');
 
     // Usuario Administrador
@@ -136,42 +274,24 @@ async function seed() {
         {
           branchId: savedBranchQuito.id,
           branchCode: savedBranchQuito.code,
-          role: 'admin',
-          permissions: ['*'], // Todos los permisos
-          accessLevel: 'full',
         },
         {
           branchId: savedBranchGuayaquil.id,
           branchCode: savedBranchGuayaquil.code,
-          role: 'admin',
-          permissions: ['*'],
-          accessLevel: 'full',
         },
-      ],
-      roles: [
-        {
-          id: 'admin',
-          name: 'Administrador',
-          code: 'ADMIN',
-          permissions: ['*'],
-        },
-      ],
-      permissions: [
-        { code: 'users.view', name: 'Ver usuarios' },
-        { code: 'users.create', name: 'Crear usuarios' },
-        { code: 'users.edit', name: 'Editar usuarios' },
-        { code: 'users.delete', name: 'Eliminar usuarios' },
-        { code: 'branches.view', name: 'Ver sucursales' },
-        { code: 'branches.manage', name: 'Gestionar sucursales' },
-        { code: 'reports.view', name: 'Ver reportes' },
-        { code: 'reports.export', name: 'Exportar reportes' },
       ],
       isActive: true,
     });
     const savedAdminUser = await usuarioRepository.save(adminUser);
     console.log(`✅ Usuario creado: ${savedAdminUser.email} (ID: ${savedAdminUser.id})`);
-    console.log(`   📧 Email: admin@mnksolutions.com`);
-    console.log(`   🔑 Password: Admin123!`);
+
+    // Asignar rol admin al usuario admin
+    const adminUserRole = userRoleRepository.create({
+      userId: savedAdminUser.id,
+      roleId: savedAdminRole.id,
+      isActive: true,
+    });
+    await userRoleRepository.save(adminUserRole);
 
     // Usuario de Prueba
     const hashedTestPassword = await bcrypt.hash('Test123!', 10);
@@ -186,29 +306,152 @@ async function seed() {
         {
           branchId: savedBranchGuayaquil.id,
           branchCode: savedBranchGuayaquil.code,
-          role: 'user',
-          permissions: ['reports.view', 'data.view'],
-          accessLevel: 'read',
         },
-      ],
-      roles: [
-        {
-          id: 'user',
-          name: 'Usuario',
-          code: 'USER',
-          permissions: ['reports.view', 'data.view'],
-        },
-      ],
-      permissions: [
-        { code: 'reports.view', name: 'Ver reportes' },
-        { code: 'data.view', name: 'Ver datos' },
       ],
       isActive: true,
     });
     const savedTestUser = await usuarioRepository.save(testUser);
     console.log(`✅ Usuario creado: ${savedTestUser.email} (ID: ${savedTestUser.id})`);
-    console.log(`   📧 Email: test@mnksolutions.com`);
-    console.log(`   🔑 Password: Test123!`);
+
+    // Asignar rol usuario al usuario de prueba
+    const testUserRole = userRoleRepository.create({
+      userId: savedTestUser.id,
+      roleId: savedUserRole.id,
+      isActive: true,
+    });
+    await userRoleRepository.save(testUserRole);
+
+    // 6. Crear Items del Menú
+    console.log('📋 Creando items del menú...');
+
+    const menuItems = [
+      {
+        menuId: 'home',
+        label: 'Inicio',
+        route: '/',
+        order: 1,
+        isPublic: true,
+        permissionId: savedPagePermissions.find((p) => p.code === 'home')?.id,
+      },
+      {
+        menuId: 'explore',
+        label: 'Explorar',
+        route: '/main/explore',
+        order: 2,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'explore')?.id,
+      },
+      {
+        menuId: 'products',
+        label: 'Productos',
+        order: 3,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'products')?.id,
+        columns: [
+          {
+            title: 'Productos',
+            items: [
+              { id: 'network-security', label: 'Network Security', route: '/products/network-security' },
+              { id: 'vulnerability', label: 'Vulnerability', route: '/products/vulnerability' },
+              { id: 'pam', label: 'PAM', route: '/products/pam' },
+              { id: 'endpoint', label: 'Endpoint', route: '/products/endpoint' },
+              { id: 'insurance', label: 'Insurance', route: '/products/insurance' },
+            ],
+          },
+          {
+            title: 'Plataforma',
+            items: [
+              { id: 'threat-hunting', label: 'Threat Hunting', route: '/platform/threat-hunting' },
+              { id: 'uem', label: 'UEM', route: '/platform/uem' },
+              { id: 'email-security', label: 'Email Security', route: '/platform/email-security' },
+            ],
+          },
+          {
+            title: 'Servicios Administrados',
+            items: [
+              { id: 'xdr', label: 'XDR', route: '/services/xdr' },
+              { id: 'mxdr', label: 'MXDR', route: '/services/mxdr' },
+            ],
+          },
+        ],
+      },
+      {
+        menuId: 'accounts',
+        label: 'Cuentas',
+        route: '/accounts',
+        order: 4,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'accounts')?.id,
+        submenu: [
+          { id: 'savings', label: 'Ahorros', route: '/accounts/savings' },
+          { id: 'checking', label: 'Corriente', route: '/accounts/checking' },
+          { id: 'investments', label: 'Inversiones', route: '/accounts/investments' },
+        ],
+      },
+      {
+        menuId: 'loans',
+        label: 'Préstamos',
+        route: '/loans',
+        order: 5,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'loans')?.id,
+        submenu: [
+          { id: 'multicredit', label: 'Multicrédito', description: 'Préstamo multicrédito', route: '/loans/multicredit' },
+          { id: 'microcredit', label: 'Microcrédito', description: 'Préstamo microcrédito', route: '/loans/microcredit' },
+          { id: 'casafacil', label: 'Casa Fácil', description: 'Préstamo para vivienda', route: '/loans/casafacil' },
+          { id: 'autofacil', label: 'Auto Fácil', description: 'Préstamo para vehículo', route: '/loans/autofacil' },
+          { id: 'educativo', label: 'Educativo', description: 'Préstamo educativo', route: '/loans/educativo' },
+        ],
+      },
+      {
+        menuId: 'cards',
+        label: 'Tarjetas',
+        route: '/cards',
+        order: 6,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'cards')?.id,
+        submenu: [
+          { id: 'visa', label: 'Visa', route: '/cards/visa' },
+          { id: 'mastercard', label: 'Mastercard', route: '/cards/mastercard' },
+        ],
+      },
+      {
+        menuId: 'services',
+        label: 'Más Servicios',
+        route: '/services',
+        order: 7,
+        isPublic: false,
+        permissionId: savedPagePermissions.find((p) => p.code === 'services')?.id,
+        submenu: [
+          { id: 'transfers', label: 'Transferencias', route: '/services/transfers' },
+          { id: 'payments', label: 'Pagos', route: '/services/payments' },
+        ],
+      },
+      {
+        menuId: 'contact',
+        label: 'Contacto',
+        route: '/main/contact',
+        order: 8,
+        isPublic: true,
+        permissionId: savedPagePermissions.find((p) => p.code === 'contact')?.id,
+      },
+    ];
+
+    for (const item of menuItems) {
+      const menuItem = menuItemRepository.create({
+        menuId: item.menuId,
+        label: item.label,
+        route: item.route,
+        order: item.order,
+        isPublic: item.isPublic || false,
+        permissionId: item.permissionId,
+        columns: item.columns || null,
+        submenu: item.submenu || null,
+        isActive: true,
+      });
+      await menuItemRepository.save(menuItem);
+    }
+    console.log(`✅ ${menuItems.length} items del menú creados`);
 
     // Cerrar conexión
     await AppDataSource.destroy();
@@ -218,10 +461,12 @@ async function seed() {
     console.log('👔 ADMINISTRADOR:');
     console.log('   Email: admin@mnksolutions.com');
     console.log('   Password: Admin123!');
+    console.log('   Permisos: Todos los permisos');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('👤 USUARIO DE PRUEBA:');
     console.log('   Email: test@mnksolutions.com');
     console.log('   Password: Test123!');
+    console.log('   Permisos: Acceso básico (solo lectura)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   } catch (error) {
     console.error('❌ Error durante el seeding:', error);
@@ -232,4 +477,3 @@ async function seed() {
 
 // Ejecutar seeding
 seed();
-

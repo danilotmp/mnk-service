@@ -22,6 +22,7 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 
 ### 🔗 Integración
 - **INTEGRACION_FRONTEND.md** - Guía de integración con React Native
+- **INTEGRACION_FRONTEND_AUTORIZACION.md** - Integración del sistema de autorización y menú dinámico ⭐
 
 ### 🌐 Endpoints Públicos vs Privados
 - **ENDPOINTS_PUBLICOS_PRIVADOS.md** - Arquitectura de endpoints públicos y privados
@@ -29,6 +30,11 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 ### 🌍 Sistema de Mensajes i18n
 - **GUIA_I18N_MENSAJES.md** - Guía completa del sistema de mensajes multilenguaje
 - **RESUMEN_IMPLEMENTACION_I18N.md** - Resumen de lo implementado
+
+### 🔐 Sistema de Autorización
+- **GUIA_AUTORIZACION.md** - Guía completa del sistema de autorización (roles, permisos, guards)
+- **DIAGRAMA_BDD_AUTORIZACION.md** - Diagrama de base de datos y relacionamiento lógico ⭐
+- **INTEGRACION_FRONTEND_AUTORIZACION.md** - Guía de integración del sistema de autorización en React Native ⭐
 
 ### 📋 Contexto del Proyecto
 - **Planteamiento.docx** - Documento original con el planteamiento del proyecto
@@ -38,17 +44,21 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 
 ```
 documents/
-├── INSTRUCCIONES_INICIO.md         # Inicio rápido
-├── GUIA_CONSUMO_API.md             # Consumo de API y tokens ⭐
-├── ENDPOINTS_PUBLICOS_PRIVADOS.md  # Públicos vs Privados ⭐
-├── POSTMAN_INSTRUCCIONES.md        # Postman
+├── INSTRUCCIONES_INICIO.md              # Inicio rápido
+├── GUIA_CONSUMO_API.md                  # Consumo de API y tokens ⭐
+├── ENDPOINTS_PUBLICOS_PRIVADOS.md       # Públicos vs Privados ⭐
+├── POSTMAN_INSTRUCCIONES.md             # Postman
 ├── MNK_Service_API.postman_collection.json
-├── SEED_INSTRUCCIONES.md          # Seeding
-├── DEBUG_INSTRUCCIONES.md          # Debug
-├── INTEGRACION_FRONTEND.md        # Integración
-├── Planteamiento.docx              # Planteamiento original
-├── CONTEXT.docx                    # Contexto
-└── INDEX.md                        # Este archivo
+├── SEED_INSTRUCCIONES.md                # Seeding
+├── DEBUG_INSTRUCCIONES.md               # Debug
+├── INTEGRACION_FRONTEND.md              # Integración
+├── GUIA_AUTORIZACION.md                 # Sistema de autorización ⭐
+├── INTEGRACION_FRONTEND_AUTORIZACION.md # Integración autorización ⭐
+├── GUIA_I18N_MENSAJES.md               # Sistema i18n
+├── RESUMEN_IMPLEMENTACION_I18N.md      # Resumen i18n
+├── Planteamiento.docx                   # Planteamiento original
+├── CONTEXT.docx                         # Contexto
+└── INDEX.md                             # Este archivo
 ```
 
 ## 📌 Guías por Tarea
@@ -70,6 +80,15 @@ Lee: `DEBUG_INSTRUCCIONES.md`
 
 ### ¿Cómo integro con React Native?
 Lee: `INTEGRACION_FRONTEND.md`
+
+### ¿Cómo implemento autorización y menú dinámico en React Native?
+Lee: `INTEGRACION_FRONTEND_AUTORIZACION.md` - **IMPORTANTE: Sistema de autorización**
+
+### ¿Cómo funciona el sistema de autorización?
+Lee: `GUIA_AUTORIZACION.md` - **Roles, permisos y guards**
+
+### ¿Cómo está estructurada la base de datos de autorización?
+Lee: `DIAGRAMA_BDD_AUTORIZACION.md` - **Diagrama de relaciones y jerarquía**
 
 ## 🔄 Actualización
 

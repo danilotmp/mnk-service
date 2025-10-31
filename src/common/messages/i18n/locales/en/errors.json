@@ -13,6 +13,9 @@
   "INVALID_PASSWORD": "Invalid password",
   "PASSWORD_TOO_SHORT": "Password must be at least 6 characters",
   "USER_NOT_FOUND": "User not found",
+  "ROLE_ID_REQUIRED": "Role ID is required. Must be sent as a query parameter. Example: /api/menu?roleId=role-uuid",
+  "ROLE_NOT_FOUND": "Role not found",
+  "ROLE_NO_PERMISSIONS": "The role has no assigned permissions. You must configure permissions for this role in the administration system.",
   "COMPANY_NOT_FOUND": "Company not found",
   "BRANCH_NOT_FOUND": "Branch not found"
 }

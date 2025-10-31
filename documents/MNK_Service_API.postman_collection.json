@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "MNK Service API",
-    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa",
+    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa con autorización y menú dinámico",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "mnk-service-001"
   },
@@ -35,31 +35,41 @@
                 "value": "application/json"
               },
               {
+                "key": "Accept-Language",
+                "value": "es",
+                "description": "Idioma: es, en, pt"
+              },
+              {
                 "key": "company-code",
-                "value": "COMP001",
+                "value": "MNK",
                 "description": "Código de la empresa (multiempresa)"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}"
+              "raw": "{\n  \"email\": \"admin@mnksolutions.com\",\n  \"password\": \"Admin123!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "seguridades", "login"]
             },
-            "description": "Iniciar sesión y obtener tokens JWT"
+            "description": "Iniciar sesión y obtener tokens JWT\n\n**Credenciales de Prueba:**\n- Admin: admin@mnksolutions.com / Admin123!\n- Usuario: test@mnksolutions.com / Test123!"
           },
           "response": [
             {
               "name": "Login exitoso",
               "originalRequest": {
                 "method": "POST",
-                "header": [],
+                "header": [
+                  {
+                    "key": "Accept-Language",
+                    "value": "es"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"email\": \"admin@mnksolutions.com\",\n  \"password\": \"Admin123!\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/seguridades/login",
@@ -72,7 +82,7 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "{\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid-del-usuario\",\n      \"email\": \"admin@example.com\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"User\",\n      \"companyId\": \"uuid-de-empresa\"\n    }\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Inicio de sesión exitoso\",\n    \"details\": null\n  }\n}"
+              "body": "{\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid-del-usuario\",\n      \"email\": \"admin@mnksolutions.com\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"Sistema\",\n      \"companyId\": \"uuid-de-empresa\"\n    }\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Inicio de sesión exitoso\",\n    \"details\": null\n  }\n}"
             }
           ]
         },
@@ -83,7 +93,7 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 201) {",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
                   "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
@@ -102,13 +112,17 @@
                 "value": "application/json"
               },
               {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
                 "key": "company-code",
-                "value": "COMP001"
+                "value": "MNK"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\"\n}"
+              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/register",
@@ -129,8 +143,12 @@
                 "value": "application/json"
               },
               {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
                 "key": "company-code",
-                "value": "COMP001"
+                "value": "MNK"
               }
             ],
             "body": {
@@ -142,7 +160,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "seguridades", "refresh-token"]
             },
-            "description": "Refrescar token de acceso"
+            "description": "Refrescar token de acceso usando refresh token"
           },
           "response": []
         },
@@ -157,8 +175,12 @@
                 "type": "text"
               },
               {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
                 "key": "company-code",
-                "value": "COMP001"
+                "value": "MNK"
               },
               {
                 "key": "user-id",
@@ -194,8 +216,12 @@
                 "type": "text"
               },
               {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
                 "key": "company-code",
-                "value": "COMP001"
+                "value": "MNK"
               },
               {
                 "key": "user-id",
@@ -214,6 +240,88 @@
             "description": "Obtener información del usuario autenticado"
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Menú",
+      "item": [
+        {
+          "name": "Obtener Menú",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text",
+                "description": "Opcional: Si se envía y es válido, devuelve menú según permisos del rol del usuario"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "description": "Idioma: es, en, pt"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/menu",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "menu"]
+            },
+            "description": "Obtener menú del sistema\n\n**Comportamiento:**\n- **Con token válido (usuario autenticado)**: Devuelve menú completo según permisos del rol del usuario (items públicos + privados según permisos)\n- **Sin token o token inválido (usuario no autenticado)**: Devuelve solo items públicos\n\n**No requiere autenticación obligatoria.** El token es opcional. Si se envía y es válido, se usa para obtener los permisos del usuario desde su rol."
+          },
+          "response": [
+            {
+              "name": "Menú con permisos (autenticado)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "es"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/menu",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "menu"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"home\",\n      \"label\": \"Inicio\",\n      \"route\": \"/\"\n    },\n    {\n      \"id\": \"explore\",\n      \"label\": \"Explorar\",\n      \"route\": \"/main/explore\"\n    },\n    {\n      \"id\": \"products\",\n      \"label\": \"Productos\",\n      \"columns\": [\n        {\n          \"title\": \"Productos\",\n          \"items\": [\n            {\n              \"id\": \"network-security\",\n              \"label\": \"Network Security\",\n              \"route\": \"/products/network-security\"\n            },\n            {\n              \"id\": \"vulnerability\",\n              \"label\": \"Vulnerability\",\n              \"route\": \"/products/vulnerability\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"id\": \"loans\",\n      \"label\": \"Préstamos\",\n      \"submenu\": [\n        {\n          \"id\": \"multicredit\",\n          \"label\": \"Multicrédito\",\n          \"description\": \"Préstamo multicrédito\",\n          \"route\": \"/loans/multicredit\"\n        }\n      ]\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "Menú público (sin autenticación)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept-Language",
+                    "value": "es"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/menu",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "menu"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"home\",\n      \"label\": \"Inicio\",\n      \"route\": \"/\"\n    },\n    {\n      \"id\": \"contact\",\n      \"label\": \"Contacto\",\n      \"route\": \"/main/contact\"\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+            }
+          ]
         }
       ]
     }
@@ -241,4 +349,3 @@
     }
   ]
 }
-

@@ -13,6 +13,9 @@
   "INVALID_PASSWORD": "Senha inválida",
   "PASSWORD_TOO_SHORT": "A senha deve ter pelo menos 6 caracteres",
   "USER_NOT_FOUND": "Usuário não encontrado",
+  "ROLE_ID_REQUIRED": "O ID do papel é obrigatório. Deve ser enviado como parâmetro de consulta. Exemplo: /api/menu?roleId=uuid-do-papel",
+  "ROLE_NOT_FOUND": "Papel não encontrado",
+  "ROLE_NO_PERMISSIONS": "O papel não tem permissões atribuídas. Você deve configurar permissões para este papel no sistema de administração.",
   "COMPANY_NOT_FOUND": "Empresa não encontrada",
   "BRANCH_NOT_FOUND": "Filial não encontrada"
 }

@@ -32,7 +32,11 @@ export class AuthService {
       const errorResponse = await this.responseHelper.errorResponse(
         MessageCode.INVALID_CREDENTIALS,
         lang,
-        'El email o contraseña son incorrectos',
+        {
+          error: 'USER_NOT_FOUND',
+          email: loginDto.email,
+          message: 'User not found in database',
+        },
         401,
       );
       throw new UnauthorizedException(errorResponse);
@@ -44,7 +48,11 @@ export class AuthService {
       const errorResponse = await this.responseHelper.errorResponse(
         MessageCode.INVALID_CREDENTIALS,
         lang,
-        'El email o contraseña son incorrectos',
+        {
+          error: 'INVALID_PASSWORD',
+          userId: usuario.id,
+          message: 'Password hash comparison failed',
+        },
         401,
       );
       throw new UnauthorizedException(errorResponse);
@@ -154,7 +162,12 @@ export class AuthService {
         const errorResponse = await this.responseHelper.errorResponse(
           MessageCode.TOKEN_INVALID,
           lang,
-          'El refresh token no es válido',
+          {
+            error: 'INVALID_REFRESH_TOKEN',
+            userId: payload.sub,
+            isActive: usuario?.isActive || false,
+            message: 'Refresh token validation failed or user inactive',
+          },
           401,
         );
         throw new UnauthorizedException(errorResponse);
@@ -175,7 +188,11 @@ export class AuthService {
       const errorResponse = await this.responseHelper.errorResponse(
         MessageCode.TOKEN_EXPIRED,
         lang,
-        error.message,
+        {
+          error: error.name || 'TOKEN_EXPIRED',
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
         401,
       );
       throw new UnauthorizedException(errorResponse);

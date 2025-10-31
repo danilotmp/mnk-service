@@ -10,27 +10,16 @@ import {
 } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserRoleEntity } from './user-role.entity';
+import { RolePermissionEntity } from './role-permission.entity';
 
 /**
- * Entidad de Usuario
- * Representa un usuario del sistema multiempresa
+ * Entidad de Rol
+ * Representa un rol en el sistema (ej: Admin, Usuario, Editor)
  */
-@Entity('usuarios')
-export class UsuarioEntity {
+@Entity('roles')
+export class RoleEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ unique: true })
-  email: string;
-
-  @Column()
-  password: string;
-
-  @Column()
-  firstName: string;
-
-  @Column()
-  lastName: string;
 
   @Column({ name: 'company_id' })
   companyId: string;
@@ -39,11 +28,20 @@ export class UsuarioEntity {
   @JoinColumn({ name: 'company_id' })
   company: CompanyEntity;
 
+  @Column()
+  name: string; // 'admin', 'usuario', 'editor'
+
+  @Column({ nullable: true })
+  displayName: string; // 'Administrador', 'Usuario', 'Editor'
+
+  @Column({ nullable: true })
+  description: string;
+
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'datetime', nullable: true })
-  lastLogin: Date;
+  @Column({ default: false })
+  isSystem: boolean; // Si es un rol del sistema (no se puede eliminar)
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
@@ -51,15 +49,11 @@ export class UsuarioEntity {
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
-  // Campos para compatibilidad con multiempresa
-  @Column({ nullable: true })
-  currentBranchId: string;
-
-  @Column({ type: 'simple-json', nullable: true })
-  availableBranches: any[];
-
   // Relaciones
-  @OneToMany(() => UserRoleEntity, (userRole) => userRole.user)
+  @OneToMany(() => UserRoleEntity, (userRole) => userRole.role)
   userRoles: UserRoleEntity[];
+
+  @OneToMany(() => RolePermissionEntity, (rolePermission) => rolePermission.role)
+  rolePermissions: RolePermissionEntity[];
 }
 

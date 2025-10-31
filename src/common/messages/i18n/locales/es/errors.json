@@ -13,6 +13,9 @@
   "INVALID_PASSWORD": "Contraseña inválida",
   "PASSWORD_TOO_SHORT": "La contraseña debe tener al menos 6 caracteres",
   "USER_NOT_FOUND": "Usuario no encontrado",
+  "ROLE_ID_REQUIRED": "El ID del rol es obligatorio. Debe enviarse como parámetro de consulta (query parameter). Ejemplo: /api/menu?roleId=uuid-del-rol",
+  "ROLE_NOT_FOUND": "Rol no encontrado",
+  "ROLE_NO_PERMISSIONS": "El rol no tiene permisos asignados. Debe configurar permisos para este rol en el sistema de administración.",
   "COMPANY_NOT_FOUND": "Empresa no encontrada",
   "BRANCH_NOT_FOUND": "Sucursal no encontrada"
 }
