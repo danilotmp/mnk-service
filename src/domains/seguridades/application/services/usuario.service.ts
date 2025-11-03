@@ -4,6 +4,8 @@ import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreateUsuarioDto } from '../../presentation/dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../../presentation/dto/update-usuario.dto';
+import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationHelper } from '@/common/helpers/pagination.helper';
 import * as bcrypt from 'bcrypt';
 
 /**
@@ -46,7 +48,7 @@ export class UsuarioService {
   }
 
   /**
-   * Obtener todos los usuarios
+   * Obtener todos los usuarios (sin paginación - para compatibilidad)
    */
   async findAll(lang: string = 'es') {
     const usuarios = await this.usuarioRepository.findAll();
@@ -58,6 +60,36 @@ export class UsuarioService {
     });
 
     return await this.responseHelper.successResponse(usuariosSinPassword, MessageCode.SUCCESS, lang);
+  }
+
+  /**
+   * Obtener usuarios con paginación
+   */
+  async findPaginated(
+    paginationDto: PaginationDto,
+    filters?: { companyId?: string; isActive?: boolean; searchTerm?: string },
+    lang: string = 'es',
+  ) {
+    const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
+
+    const [usuarios, total] = filters?.searchTerm || filters?.companyId || filters?.isActive !== undefined
+      ? await this.usuarioRepository.searchWithPagination(skip, limit, filters)
+      : await this.usuarioRepository.findWithPagination(skip, limit);
+
+    // Retornar sin contraseñas
+    const usuariosSinPassword = usuarios.map((usuario) => {
+      const { password, ...userWithoutPassword } = usuario;
+      return userWithoutPassword;
+    });
+
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(
+      usuariosSinPassword,
+      total,
+      page,
+      limit,
+    );
+
+    return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
 
   /**

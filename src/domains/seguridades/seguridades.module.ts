@@ -5,10 +5,6 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { MessagesModule } from '@/common/messages/messages.module';
 import { SeguridadesController } from './presentation/controllers/seguridades.controller';
-import { UsuarioController } from './presentation/controllers/usuario.controller';
-import { MenuController } from './presentation/controllers/menu.controller';
-import { RolesController } from './presentation/controllers/roles.controller';
-import { PermissionsController } from './presentation/controllers/permissions.controller';
 import { AuthService } from './application/services/auth.service';
 import { UsuarioService } from './application/services/usuario.service';
 import { AuthorizationService } from './application/services/authorization.service';
@@ -55,13 +51,7 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     }),
     MessagesModule, // Importar MessagesModule para tener acceso a ResponseHelper
   ],
-  controllers: [
-    SeguridadesController,
-    UsuarioController,
-    MenuController,
-    RolesController,
-    PermissionsController,
-  ],
+  controllers: [SeguridadesController],
   providers: [
     AuthService,
     UsuarioService,

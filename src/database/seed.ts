@@ -40,7 +40,109 @@ async function seed() {
     // Verificar si ya existen datos
     const existingCompany = await companyRepository.findOne({ where: { code: 'MNK' } });
     if (existingCompany) {
-      console.log('⚠️  Ya existen datos de prueba. Para recrear, borra la base de datos y ejecuta este script nuevamente.');
+      console.log('⚠️  Ya existen datos de prueba. Actualizando permisos y menú de seguridad...');
+      
+      // Buscar y actualizar permisos de seguridad si no existen
+      let securityAllPerm = await permissionRepository.findOne({ where: { code: 'security.*' } });
+      if (!securityAllPerm) {
+        console.log('🔐 Creando permisos de seguridad...');
+        const securityPermissionsToCreate = [
+          { code: 'security.*', name: 'Acceso completo al módulo de seguridad', resource: 'security', action: '*' },
+          { code: 'security.users.view', name: 'Ver usuarios (seguridad)', resource: 'security', action: 'users.view' },
+          { code: 'security.roles.view', name: 'Ver roles (seguridad)', resource: 'security', action: 'roles.view' },
+          { code: 'security.permissions.view', name: 'Ver permisos (seguridad)', resource: 'security', action: 'permissions.view' },
+          { code: 'security.accesses.view', name: 'Ver accesos (seguridad)', resource: 'security', action: 'accesses.view' },
+        ];
+        
+        for (const perm of securityPermissionsToCreate) {
+          const permission = permissionRepository.create({
+            code: perm.code,
+            name: perm.name,
+            type: PermissionType.ACTION,
+            resource: perm.resource,
+            action: perm.action,
+            isPublic: false,
+            isActive: true,
+            isSystem: true,
+          });
+          await permissionRepository.save(permission);
+        }
+        
+        // Asignar permisos de seguridad al rol admin
+        const adminRole = await roleRepository.findOne({ where: { name: 'admin' } });
+        if (adminRole) {
+          const allPermissions = await permissionRepository.find({ where: { isActive: true } });
+          for (const permission of allPermissions) {
+            const existing = await rolePermissionRepository.findOne({ 
+              where: { roleId: adminRole.id, permissionId: permission.id } 
+            });
+            if (!existing) {
+              const rolePermission = rolePermissionRepository.create({
+                roleId: adminRole.id,
+                permissionId: permission.id,
+                isActive: true,
+              });
+              await rolePermissionRepository.save(rolePermission);
+            }
+          }
+        }
+      }
+      
+      // Buscar y actualizar menú de seguridad si no existe
+      let securityMenu = await menuItemRepository.findOne({ where: { menuId: 'security' } });
+      if (!securityMenu) {
+        console.log('📋 Creando menú de seguridad...');
+        securityAllPerm = await permissionRepository.findOne({ where: { code: 'security.*' } });
+        const securityUsersPerm = await permissionRepository.findOne({ where: { code: 'security.users.view' } });
+        const securityRolesPerm = await permissionRepository.findOne({ where: { code: 'security.roles.view' } });
+        const securityPermissionsPerm = await permissionRepository.findOne({ where: { code: 'security.permissions.view' } });
+        const securityAccessesPerm = await permissionRepository.findOne({ where: { code: 'security.accesses.view' } });
+        
+        securityMenu = menuItemRepository.create({
+          menuId: 'security',
+          label: 'Seguridades',
+          route: '/security',
+          order: 100,
+          isPublic: false,
+          permissionId: securityAllPerm?.id,
+          description: 'Módulo de administración de seguridad',
+          submenu: [
+            {
+              id: 'security-users',
+              label: 'Usuarios',
+              route: '/security/users',
+              description: 'Administración de usuarios del sistema',
+              order: 1,
+            },
+            {
+              id: 'security-roles',
+              label: 'Roles',
+              route: '/security/roles',
+              description: 'Administración de roles del sistema',
+              order: 2,
+            },
+            {
+              id: 'security-permissions',
+              label: 'Permisos',
+              route: '/security/permissions',
+              description: 'Administración de permisos del sistema',
+              order: 3,
+            },
+            {
+              id: 'security-accesses',
+              label: 'Accesos',
+              route: '/security/accesses',
+              description: 'Administración de accesos de usuarios',
+              order: 4,
+            },
+          ],
+          isActive: true,
+        });
+        await menuItemRepository.save(securityMenu);
+        console.log('✅ Menú de seguridad creado');
+      }
+      
+      console.log('✅ Actualización completada');
       await AppDataSource.destroy();
       return;
     }
@@ -178,6 +280,12 @@ async function seed() {
       // Permisos
       { code: 'permissions.view', name: 'Ver permisos', resource: 'permissions', action: 'view' },
       { code: 'permissions.manage', name: 'Gestionar permisos', resource: 'permissions', action: 'manage' },
+      // Seguridad (Security Module)
+      { code: 'security.*', name: 'Acceso completo al módulo de seguridad', resource: 'security', action: '*' },
+      { code: 'security.users.view', name: 'Ver usuarios (seguridad)', resource: 'security', action: 'users.view' },
+      { code: 'security.roles.view', name: 'Ver roles (seguridad)', resource: 'security', action: 'roles.view' },
+      { code: 'security.permissions.view', name: 'Ver permisos (seguridad)', resource: 'security', action: 'permissions.view' },
+      { code: 'security.accesses.view', name: 'Ver accesos (seguridad)', resource: 'security', action: 'accesses.view' },
     ];
 
     const savedActionPermissions: PermissionEntity[] = [];
@@ -437,6 +545,80 @@ async function seed() {
       },
     ];
 
+    // Guardar permisos de seguridad para el menú
+    const securityPermissions = {
+      all: savedActionPermissions.find((p) => p.code === 'security.*'),
+      usersView: savedActionPermissions.find((p) => p.code === 'security.users.view'),
+      rolesView: savedActionPermissions.find((p) => p.code === 'security.roles.view'),
+      permissionsView: savedActionPermissions.find((p) => p.code === 'security.permissions.view'),
+      accessesView: savedActionPermissions.find((p) => p.code === 'security.accesses.view'),
+    };
+
+    // Crear menú de seguridad (administración)
+    console.log('🔒 Creando menú de seguridad (administración)...');
+
+    // Menú principal de seguridad
+    const securityMenuItem = menuItemRepository.create({
+      menuId: 'security',
+      label: 'Seguridades',
+      route: '/security',
+      order: 100,
+      isPublic: false,
+      permissionId: securityPermissions.all?.id,
+      description: 'Módulo de administración de seguridad',
+      isActive: true,
+    });
+    const savedSecurityMenu = await menuItemRepository.save(securityMenuItem);
+    console.log(`✅ Menú principal de seguridad creado: ${savedSecurityMenu.label}`);
+
+    // Submenús de seguridad
+    const securitySubmenus = [
+      {
+        menuId: 'security-users',
+        label: 'Usuarios',
+        route: '/security/users',
+        order: 1,
+        description: 'Administración de usuarios del sistema',
+        permissionId: securityPermissions.usersView?.id,
+      },
+      {
+        menuId: 'security-roles',
+        label: 'Roles',
+        route: '/security/roles',
+        order: 2,
+        description: 'Administración de roles del sistema',
+        permissionId: securityPermissions.rolesView?.id,
+      },
+      {
+        menuId: 'security-permissions',
+        label: 'Permisos',
+        route: '/security/permissions',
+        order: 3,
+        description: 'Administración de permisos del sistema',
+        permissionId: securityPermissions.permissionsView?.id,
+      },
+      {
+        menuId: 'security-accesses',
+        label: 'Accesos',
+        route: '/security/accesses',
+        order: 4,
+        description: 'Administración de accesos de usuarios',
+        permissionId: securityPermissions.accessesView?.id,
+      },
+    ];
+
+    // Guardar submenús en el campo submenu del menú principal
+    savedSecurityMenu.submenu = securitySubmenus.map((submenu) => ({
+      id: submenu.menuId,
+      label: submenu.label,
+      route: submenu.route,
+      description: submenu.description,
+      order: submenu.order,
+    }));
+
+    await menuItemRepository.save(savedSecurityMenu);
+    console.log(`✅ ${securitySubmenus.length} submenús de seguridad creados`);
+
     for (const item of menuItems) {
       const menuItem = menuItemRepository.create({
         menuId: item.menuId,
@@ -452,6 +634,10 @@ async function seed() {
       await menuItemRepository.save(menuItem);
     }
     console.log(`✅ ${menuItems.length} items del menú creados`);
+
+    // Guardar menú de seguridad después de los items principales
+    await menuItemRepository.save(savedSecurityMenu);
+    console.log(`✅ ${securitySubmenus.length} submenús de seguridad creados`);
 
     // Cerrar conexión
     await AppDataSource.destroy();

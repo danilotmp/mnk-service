@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "MNK Service API",
-    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa con autorización y menú dinámico",
+    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa con DDD + Hexagonal Architecture, autorización y menú dinámico",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "mnk-service-001"
   },
@@ -21,6 +21,7 @@
                   "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
                   "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
                   "    pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "    // roleId ya no es necesario, se obtiene del token del usuario"
                   "}"
                 ],
                 "type": "text/javascript"
@@ -50,41 +51,13 @@
               "raw": "{\n  \"email\": \"admin@mnksolutions.com\",\n  \"password\": \"Admin123!\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/seguridades/login",
+              "raw": "{{baseUrl}}/api/seguridades/auth/login",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "seguridades", "login"]
+              "path": ["api", "seguridades", "auth", "login"]
             },
             "description": "Iniciar sesión y obtener tokens JWT\n\n**Credenciales de Prueba:**\n- Admin: admin@mnksolutions.com / Admin123!\n- Usuario: test@mnksolutions.com / Test123!"
           },
-          "response": [
-            {
-              "name": "Login exitoso",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept-Language",
-                    "value": "es"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"admin@mnksolutions.com\",\n  \"password\": \"Admin123!\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/seguridades/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "seguridades", "login"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid-del-usuario\",\n      \"email\": \"admin@mnksolutions.com\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"Sistema\",\n      \"companyId\": \"uuid-de-empresa\"\n    }\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Inicio de sesión exitoso\",\n    \"details\": null\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "Registro",
@@ -95,9 +68,11 @@
                 "exec": [
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-                  "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-                  "    pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "    if (jsonData.data.accessToken) {",
+                  "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+                  "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "        pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "    }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -125,9 +100,9 @@
               "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/seguridades/register",
+              "raw": "{{baseUrl}}/api/seguridades/auth/register",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "seguridades", "register"]
+              "path": ["api", "seguridades", "auth", "register"]
             },
             "description": "Registrar nuevo usuario"
           },
@@ -156,9 +131,9 @@
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/seguridades/refresh-token",
+              "raw": "{{baseUrl}}/api/seguridades/auth/refresh-token",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "seguridades", "refresh-token"]
+              "path": ["api", "seguridades", "auth", "refresh-token"]
             },
             "description": "Refrescar token de acceso usando refresh token"
           },
@@ -206,14 +181,13 @@
       "name": "Usuarios",
       "item": [
         {
-          "name": "Obtener Usuario Actual",
+          "name": "Listar Usuarios (Paginado)",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
+                "value": "Bearer {{accessToken}}"
               },
               {
                 "key": "Accept-Language",
@@ -222,22 +196,603 @@
               {
                 "key": "company-code",
                 "value": "MNK"
-              },
-              {
-                "key": "user-id",
-                "value": "{{userId}}"
-              },
-              {
-                "key": "app-source",
-                "value": "mobile"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/usuarios/me",
+              "raw": "{{baseUrl}}/api/seguridades/usuarios?page=1&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "usuarios", "me"]
+              "path": ["api", "seguridades", "usuarios"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Elementos por página (default: 10, max: 100)"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "description": "Filtrar por empresa (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filtrar por estado activo (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "searchTerm",
+                  "value": "",
+                  "description": "Búsqueda en email, nombre y apellido (opcional)",
+                  "disabled": true
+                }
+              ]
             },
-            "description": "Obtener información del usuario autenticado"
+            "description": "Obtener lista paginada de usuarios con filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Usuario por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-usuario",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            },
+            "description": "Obtener un usuario específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios"]
+            },
+            "description": "Crear un nuevo usuario"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan Actualizado\",\n  \"lastName\": \"Pérez Actualizado\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-usuario",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            },
+            "description": "Actualizar un usuario existente"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-usuario",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            },
+            "description": "Eliminar un usuario (soft delete)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Listar Roles (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/roles?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "roles"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Elementos por página (default: 10, max: 100)"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "description": "Filtrar por empresa (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filtrar por estado activo (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "searchTerm",
+                  "value": "",
+                  "description": "Búsqueda en name, displayName y description (opcional)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtener lista paginada de roles con filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Rol por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/roles/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "roles", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-rol",
+                  "description": "ID del rol (UUID)"
+                }
+              ]
+            },
+            "description": "Obtener un rol específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Rol",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyId\": \"uuid-de-empresa\",\n  \"name\": \"editor\",\n  \"displayName\": \"Editor\",\n  \"description\": \"Rol de editor con permisos limitados\",\n  \"isActive\": true,\n  \"isSystem\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "roles"]
+            },
+            "description": "Crear un nuevo rol"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Rol",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Editor Actualizado\",\n  \"description\": \"Descripción actualizada\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/roles/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "roles", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-rol",
+                  "description": "ID del rol (UUID)"
+                }
+              ]
+            },
+            "description": "Actualizar un rol existente"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Rol",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/roles/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "roles", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-rol",
+                  "description": "ID del rol (UUID)"
+                }
+              ]
+            },
+            "description": "Eliminar un rol (soft delete). No se pueden eliminar roles del sistema."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permisos",
+      "item": [
+        {
+          "name": "Listar Permisos (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/permisos?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "permisos"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Elementos por página (default: 10, max: 100)"
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Filtrar por tipo: PAGE o ACTION (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filtrar por estado activo (opcional)",
+                  "disabled": true
+                },
+                {
+                  "key": "searchTerm",
+                  "value": "",
+                  "description": "Búsqueda en code, name y description (opcional)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtener lista paginada de permisos con filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Permiso por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/permisos/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "permisos", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-permiso",
+                  "description": "ID del permiso (UUID)"
+                }
+              ]
+            },
+            "description": "Obtener un permiso específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Permiso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"users.export\",\n  \"name\": \"Exportar usuarios\",\n  \"type\": \"ACTION\",\n  \"resource\": \"users\",\n  \"action\": \"export\",\n  \"description\": \"Permite exportar usuarios a Excel/CSV\",\n  \"isActive\": true,\n  \"isSystem\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/permisos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "permisos"]
+            },
+            "description": "Crear un nuevo permiso"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Permiso",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Exportar usuarios (Actualizado)\",\n  \"description\": \"Descripción actualizada\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/permisos/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "permisos", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-permiso",
+                  "description": "ID del permiso (UUID)"
+                }
+              ]
+            },
+            "description": "Actualizar un permiso existente"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Permiso",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/permisos/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "permisos", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "uuid-del-permiso",
+                  "description": "ID del permiso (UUID)"
+                }
+              ]
+            },
+            "description": "Eliminar un permiso (soft delete). No se pueden eliminar permisos del sistema."
           },
           "response": []
         }
@@ -254,25 +809,28 @@
               {
                 "key": "Authorization",
                 "value": "Bearer {{accessToken}}",
-                "type": "text",
-                "description": "Opcional: Si se envía y es válido, devuelve menú según permisos del rol del usuario"
+                "description": "Token JWT obligatorio - El roleId se obtiene del token del usuario autenticado"
               },
               {
                 "key": "Accept-Language",
                 "value": "es",
                 "description": "Idioma: es, en, pt"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/menu",
+              "raw": "{{baseUrl}}/api/seguridades/menu",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "menu"]
+              "path": ["api", "seguridades", "menu"]
             },
-            "description": "Obtener menú del sistema\n\n**Comportamiento:**\n- **Con token válido (usuario autenticado)**: Devuelve menú completo según permisos del rol del usuario (items públicos + privados según permisos)\n- **Sin token o token inválido (usuario no autenticado)**: Devuelve solo items públicos\n\n**No requiere autenticación obligatoria.** El token es opcional. Si se envía y es válido, se usa para obtener los permisos del usuario desde su rol."
+            "description": "Obtener menú privado según permisos del usuario autenticado\n\n**Comportamiento:**\n- **Requiere token JWT válido** (autenticación obligatoria)\n- **Obtiene el userId del token** automáticamente\n- **Combina permisos de todos los roles activos** del usuario\n- Devuelve solo items privados según permisos del usuario\n- Los items públicos son manejados por el frontend\n\n**Respuesta:**\n- Si el usuario tiene permisos: devuelve array de items del menú\n- Si el usuario no tiene permisos: devuelve array vacío con alerta en `details`\n\n**Nota:** Ya no se requiere el parámetro `roleId` en la URL. El sistema obtiene automáticamente los permisos del usuario desde su token."
           },
           "response": [
             {
-              "name": "Menú con permisos (autenticado)",
+              "name": "Menú con permisos",
               "originalRequest": {
                 "method": "GET",
                 "header": [
@@ -286,9 +844,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/menu",
+                  "raw": "{{baseUrl}}/api/seguridades/menu",
                   "host": ["{{baseUrl}}"],
-                  "path": ["api", "menu"]
+                  "path": ["api", "seguridades", "menu"]
                 }
               },
               "status": "OK",
@@ -296,22 +854,26 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "{\n  \"data\": [\n    {\n      \"id\": \"home\",\n      \"label\": \"Inicio\",\n      \"route\": \"/\"\n    },\n    {\n      \"id\": \"explore\",\n      \"label\": \"Explorar\",\n      \"route\": \"/main/explore\"\n    },\n    {\n      \"id\": \"products\",\n      \"label\": \"Productos\",\n      \"columns\": [\n        {\n          \"title\": \"Productos\",\n          \"items\": [\n            {\n              \"id\": \"network-security\",\n              \"label\": \"Network Security\",\n              \"route\": \"/products/network-security\"\n            },\n            {\n              \"id\": \"vulnerability\",\n              \"label\": \"Vulnerability\",\n              \"route\": \"/products/vulnerability\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"id\": \"loans\",\n      \"label\": \"Préstamos\",\n      \"submenu\": [\n        {\n          \"id\": \"multicredit\",\n          \"label\": \"Multicrédito\",\n          \"description\": \"Préstamo multicrédito\",\n          \"route\": \"/loans/multicredit\"\n        }\n      ]\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"explore\",\n      \"label\": \"Explorar\",\n      \"route\": \"/main/explore\"\n    },\n    {\n      \"id\": \"products\",\n      \"label\": \"Productos\",\n      \"columns\": [\n        {\n          \"title\": \"Productos\",\n          \"items\": [\n            {\n              \"id\": \"network-security\",\n              \"label\": \"Network Security\",\n              \"route\": \"/products/network-security\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"id\": \"loans\",\n      \"label\": \"Préstamos\",\n      \"submenu\": [\n        {\n          \"id\": \"multicredit\",\n          \"label\": \"Multicrédito\",\n          \"description\": \"Préstamo multicrédito\",\n          \"route\": \"/loans/multicredit\"\n        }\n      ]\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
             },
             {
-              "name": "Menú público (sin autenticación)",
+              "name": "Usuario sin permisos (alerta)",
               "originalRequest": {
                 "method": "GET",
                 "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
                   {
                     "key": "Accept-Language",
                     "value": "es"
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/menu",
+                  "raw": "{{baseUrl}}/api/seguridades/menu",
                   "host": ["{{baseUrl}}"],
-                  "path": ["api", "menu"]
+                  "path": ["api", "seguridades", "menu"]
                 }
               },
               "status": "OK",
@@ -319,7 +881,7 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "cookie": [],
-              "body": "{\n  \"data\": [\n    {\n      \"id\": \"home\",\n      \"label\": \"Inicio\",\n      \"route\": \"/\"\n    },\n    {\n      \"id\": \"contact\",\n      \"label\": \"Contacto\",\n      \"route\": \"/main/contact\"\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+              "body": "{\n  \"data\": [],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n    \"details\": {\n      \"alert\": true,\n      \"userId\": \"uuid-del-usuario\",\n      \"message\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n      \"permissionsCount\": 0\n    }\n  }\n}"
             }
           ]
         }

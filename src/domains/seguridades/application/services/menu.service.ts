@@ -42,17 +42,66 @@ export class MenuService {
   ) {}
 
   /**
-   * Obtiene el menú privado según los permisos del rol
+   * Obtiene el menú privado según los permisos del usuario autenticado
    * 
    * Lógica:
    * - Solo devuelve items privados (isPublic = false)
-   * - Filtra según permisos asignados al rol
-   * - Si el rol no tiene permisos asignados, devuelve alerta
+   * - Filtra según permisos del usuario (obtenidos de sus roles)
+   * - Si el usuario no tiene permisos asignados, devuelve alerta
    * 
-   * @param roleId ID del rol del usuario autenticado
+   * @param userId ID del usuario autenticado
    * @param lang Idioma para los mensajes
-   * @returns Array de items privados del menú filtrados según permisos del rol
-   * @throws NotFoundException si el rol no existe
+   * @returns Array de items privados del menú filtrados según permisos del usuario
+   */
+  async getMenuByUser(userId: string, lang: string = 'es'): Promise<MenuItem[]> {
+    // 1. Obtener permisos del usuario (combinando permisos de todos sus roles activos)
+    const userPermissions = await this.authorizationService.getUserPermissions(userId);
+    const userPermissionCodes = userPermissions.map((p) => p.code);
+
+    // 2. Validar que el usuario tenga permisos asignados
+    if (userPermissionCodes.length === 0) {
+      // Retornar objeto especial con alerta para que el controller lo maneje
+      return {
+        menu: [],
+        alert: {
+          userId,
+          message: 'El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.',
+        },
+      } as any;
+    }
+
+    // 3. Obtener TODOS los items del menú (solo privados)
+    const allMenuItems = await this.menuItemRepository.findAll();
+
+    // 4. Filtrar solo items privados según permisos del usuario
+    const filteredMenu: MenuItem[] = [];
+
+    for (const item of allMenuItems) {
+      // Solo procesar items privados (no públicos)
+      if (item.isPublic) {
+        continue; // Omitir items públicos, el frontend los maneja
+      }
+
+      // Si no requiere permiso específico, incluirlo (acceso general para usuarios autenticados)
+      if (!item.permission) {
+        filteredMenu.push(await this.mapMenuItem(item, userPermissionCodes));
+        continue;
+      }
+
+      // Si requiere permiso, verificar que el usuario lo tenga
+      if (userPermissionCodes.includes(item.permission.code)) {
+        filteredMenu.push(await this.mapMenuItem(item, userPermissionCodes));
+      }
+      // Si no tiene permiso, no incluir
+    }
+
+    return filteredMenu;
+  }
+
+  /**
+   * Obtiene el menú privado según los permisos del rol
+   * 
+   * @deprecated Usar getMenuByUser en su lugar. Este método se mantiene por compatibilidad.
    */
   async getMenuByRole(roleId: string, lang: string = 'es'): Promise<MenuItem[]> {
     // 1. Verificar que el rol existe

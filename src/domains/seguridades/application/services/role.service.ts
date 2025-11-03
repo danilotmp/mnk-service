@@ -4,6 +4,8 @@ import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreateRoleDto } from '../../presentation/dto/create-role.dto';
 import { UpdateRoleDto } from '../../presentation/dto/update-role.dto';
+import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationHelper } from '@/common/helpers/pagination.helper';
 
 /**
  * Service de gestión de roles
@@ -16,11 +18,30 @@ export class RoleService {
   ) {}
 
   /**
-   * Obtener todos los roles
+   * Obtener todos los roles (sin paginación - para compatibilidad)
    */
   async findAll(companyId?: string, lang: string = 'es') {
     const roles = await this.roleRepository.findAll(companyId);
     return await this.responseHelper.successResponse(roles, MessageCode.SUCCESS, lang);
+  }
+
+  /**
+   * Obtener roles con paginación
+   */
+  async findPaginated(
+    paginationDto: PaginationDto,
+    filters?: { companyId?: string; isActive?: boolean; searchTerm?: string },
+    lang: string = 'es',
+  ) {
+    const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
+
+    const [roles, total] = filters?.searchTerm || filters?.isActive !== undefined
+      ? await this.roleRepository.searchWithPagination(skip, limit, filters)
+      : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId);
+
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(roles, total, page, limit);
+
+    return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
 
   /**

@@ -27,6 +27,59 @@ export class PermissionRepository {
     });
   }
 
+  /**
+   * Encontrar permisos con paginación
+   */
+  async findWithPagination(skip: number, take: number, type?: PermissionType): Promise<[PermissionEntity[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('permission').where('permission.isActive = :isActive', { isActive: true });
+
+    if (type) {
+      queryBuilder.andWhere('permission.type = :type', { type });
+    }
+
+    queryBuilder.orderBy('permission.code', 'ASC');
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
+  }
+
+  /**
+   * Buscar permisos con filtros y paginación
+   */
+  async searchWithPagination(
+    skip: number,
+    take: number,
+    filters?: {
+      type?: PermissionType;
+      isActive?: boolean;
+      searchTerm?: string;
+    },
+  ): Promise<[PermissionEntity[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('permission');
+
+    if (filters?.isActive !== undefined) {
+      queryBuilder.where('permission.isActive = :isActive', { isActive: filters.isActive });
+    } else {
+      queryBuilder.where('permission.isActive = :isActive', { isActive: true });
+    }
+
+    if (filters?.type) {
+      queryBuilder.andWhere('permission.type = :type', { type: filters.type });
+    }
+
+    if (filters?.searchTerm) {
+      queryBuilder.andWhere(
+        '(permission.code LIKE :searchTerm OR permission.name LIKE :searchTerm OR permission.description LIKE :searchTerm)',
+        { searchTerm: `%${filters.searchTerm}%` },
+      );
+    }
+
+    queryBuilder.orderBy('permission.code', 'ASC');
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
+  }
+
   findOne(id: string): Promise<PermissionEntity | null> {
     return this.repository.findOne({ where: { id } });
   }

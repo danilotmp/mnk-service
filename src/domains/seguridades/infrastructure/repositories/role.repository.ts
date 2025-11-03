@@ -23,6 +23,63 @@ export class RoleRepository {
     return query.getMany();
   }
 
+  /**
+   * Encontrar roles con paginación
+   */
+  async findWithPagination(
+    skip: number,
+    take: number,
+    companyId?: string,
+  ): Promise<[RoleEntity[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('role').where('role.isActive = :isActive', { isActive: true });
+
+    if (companyId) {
+      queryBuilder.andWhere('role.companyId = :companyId', { companyId });
+    }
+
+    queryBuilder.orderBy('role.createdAt', 'DESC');
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
+  }
+
+  /**
+   * Buscar roles con filtros y paginación
+   */
+  async searchWithPagination(
+    skip: number,
+    take: number,
+    filters?: {
+      companyId?: string;
+      isActive?: boolean;
+      searchTerm?: string;
+    },
+  ): Promise<[RoleEntity[], number]> {
+    const queryBuilder = this.repository.createQueryBuilder('role');
+
+    if (filters?.companyId) {
+      queryBuilder.andWhere('role.companyId = :companyId', { companyId: filters.companyId });
+    }
+
+    if (filters?.isActive !== undefined) {
+      queryBuilder.andWhere('role.isActive = :isActive', { isActive: filters.isActive });
+    }
+
+    if (filters?.searchTerm) {
+      queryBuilder.andWhere(
+        '(role.name LIKE :searchTerm OR role.displayName LIKE :searchTerm OR role.description LIKE :searchTerm)',
+        { searchTerm: `%${filters.searchTerm}%` },
+      );
+    } else {
+      queryBuilder.where('role.isActive = :isActive', { isActive: true });
+    }
+
+    queryBuilder.orderBy('role.createdAt', 'DESC');
+    queryBuilder.skip(skip).take(take);
+
+    return queryBuilder.getManyAndCount();
+  }
+
   findOne(id: string): Promise<RoleEntity | null> {
     return this.repository.findOne({
       where: { id },

@@ -5,6 +5,8 @@ import { MessageCode } from '@/common/messages/message-codes';
 import { CreatePermissionDto } from '../../presentation/dto/create-permission.dto';
 import { UpdatePermissionDto } from '../../presentation/dto/update-permission.dto';
 import { PermissionType } from '../../infrastructure/entities/permission.entity';
+import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationHelper } from '@/common/helpers/pagination.helper';
 
 /**
  * Service de gestión de permisos
@@ -17,13 +19,32 @@ export class PermissionService {
   ) {}
 
   /**
-   * Obtener todos los permisos
+   * Obtener todos los permisos (sin paginación - para compatibilidad)
    */
   async findAll(type?: PermissionType, lang: string = 'es') {
     const permissions = type
       ? await this.permissionRepository.findByType(type)
       : await this.permissionRepository.findAll();
     return await this.responseHelper.successResponse(permissions, MessageCode.SUCCESS, lang);
+  }
+
+  /**
+   * Obtener permisos con paginación
+   */
+  async findPaginated(
+    paginationDto: PaginationDto,
+    filters?: { type?: PermissionType; isActive?: boolean; searchTerm?: string },
+    lang: string = 'es',
+  ) {
+    const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
+
+    const [permissions, total] = filters?.searchTerm || filters?.isActive !== undefined
+      ? await this.permissionRepository.searchWithPagination(skip, limit, filters)
+      : await this.permissionRepository.findWithPagination(skip, limit, filters?.type);
+
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(permissions, total, page, limit);
+
+    return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
 
   /**
