@@ -34,7 +34,11 @@ export class MessageService {
       });
 
       // Si existe y es un string válido, devolverlo
-      if (successMessage && typeof successMessage === 'string' && successMessage !== `success.${code}`) {
+      if (
+        successMessage &&
+        typeof successMessage === 'string' &&
+        successMessage !== `success.${code}`
+      ) {
         return successMessage;
       }
 

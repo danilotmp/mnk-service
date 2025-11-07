@@ -113,6 +113,7 @@ async function seed() {
               route: '/security/users',
               description: 'Administración de usuarios del sistema',
               order: 1,
+              permission: securityUsersPerm ? { code: securityUsersPerm.code } : undefined,
             },
             {
               id: 'security-roles',
@@ -120,6 +121,7 @@ async function seed() {
               route: '/security/roles',
               description: 'Administración de roles del sistema',
               order: 2,
+              permission: securityRolesPerm ? { code: securityRolesPerm.code } : undefined,
             },
             {
               id: 'security-permissions',
@@ -127,6 +129,7 @@ async function seed() {
               route: '/security/permissions',
               description: 'Administración de permisos del sistema',
               order: 3,
+              permission: securityPermissionsPerm ? { code: securityPermissionsPerm.code } : undefined,
             },
             {
               id: 'security-accesses',
@@ -134,6 +137,7 @@ async function seed() {
               route: '/security/accesses',
               description: 'Administración de accesos de usuarios',
               order: 4,
+              permission: securityAccessesPerm ? { code: securityAccessesPerm.code } : undefined,
             },
           ],
           isActive: true,
@@ -580,6 +584,7 @@ async function seed() {
         order: 1,
         description: 'Administración de usuarios del sistema',
         permissionId: securityPermissions.usersView?.id,
+        permissionCode: securityPermissions.usersView?.code,
       },
       {
         menuId: 'security-roles',
@@ -588,6 +593,7 @@ async function seed() {
         order: 2,
         description: 'Administración de roles del sistema',
         permissionId: securityPermissions.rolesView?.id,
+        permissionCode: securityPermissions.rolesView?.code,
       },
       {
         menuId: 'security-permissions',
@@ -596,6 +602,7 @@ async function seed() {
         order: 3,
         description: 'Administración de permisos del sistema',
         permissionId: securityPermissions.permissionsView?.id,
+        permissionCode: securityPermissions.permissionsView?.code,
       },
       {
         menuId: 'security-accesses',
@@ -604,6 +611,7 @@ async function seed() {
         order: 4,
         description: 'Administración de accesos de usuarios',
         permissionId: securityPermissions.accessesView?.id,
+        permissionCode: securityPermissions.accessesView?.code,
       },
     ];
 
@@ -614,6 +622,11 @@ async function seed() {
       route: submenu.route,
       description: submenu.description,
       order: submenu.order,
+      permission: submenu.permissionCode
+        ? {
+            code: submenu.permissionCode,
+          }
+        : undefined,
     }));
 
     await menuItemRepository.save(savedSecurityMenu);

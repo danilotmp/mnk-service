@@ -62,4 +62,3 @@ export class UsuarioEntity {
   @OneToMany(() => UserRoleEntity, (userRole) => userRole.user)
   userRoles: UserRoleEntity[];
 }
-

@@ -38,11 +38,17 @@ export class PermissionService {
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
-    const [permissions, total] = filters?.searchTerm || filters?.isActive !== undefined
-      ? await this.permissionRepository.searchWithPagination(skip, limit, filters)
-      : await this.permissionRepository.findWithPagination(skip, limit, filters?.type);
+    const [permissions, total] =
+      filters?.searchTerm || filters?.isActive !== undefined
+        ? await this.permissionRepository.searchWithPagination(skip, limit, filters)
+        : await this.permissionRepository.findWithPagination(skip, limit, filters?.type);
 
-    const paginatedResponse = PaginationHelper.createPaginatedResponse(permissions, total, page, limit);
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(
+      permissions,
+      total,
+      page,
+      limit,
+    );
 
     return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
@@ -57,7 +63,11 @@ export class PermissionService {
         await this.responseHelper.errorResponse(
           MessageCode.NOT_FOUND,
           lang,
-          { error: 'PERMISSION_NOT_FOUND', permissionId: id, message: 'Permission not found in database' },
+          {
+            error: 'PERMISSION_NOT_FOUND',
+            permissionId: id,
+            message: 'Permission not found in database',
+          },
           404,
         ),
       );
@@ -116,7 +126,11 @@ export class PermissionService {
         await this.responseHelper.errorResponse(
           MessageCode.NOT_FOUND,
           lang,
-          { error: 'PERMISSION_NOT_FOUND', permissionId: id, message: 'Permission not found in database' },
+          {
+            error: 'PERMISSION_NOT_FOUND',
+            permissionId: id,
+            message: 'Permission not found in database',
+          },
           404,
         ),
       );
@@ -142,11 +156,7 @@ export class PermissionService {
     Object.assign(permission, updatePermissionDto);
     const updatedPermission = await this.permissionRepository.save(permission);
 
-    return await this.responseHelper.successResponse(
-      updatedPermission,
-      MessageCode.SUCCESS,
-      lang,
-    );
+    return await this.responseHelper.successResponse(updatedPermission, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -159,7 +169,11 @@ export class PermissionService {
         await this.responseHelper.errorResponse(
           MessageCode.NOT_FOUND,
           lang,
-          { error: 'PERMISSION_NOT_FOUND', permissionId: id, message: 'Permission not found in database' },
+          {
+            error: 'PERMISSION_NOT_FOUND',
+            permissionId: id,
+            message: 'Permission not found in database',
+          },
           404,
         ),
       );

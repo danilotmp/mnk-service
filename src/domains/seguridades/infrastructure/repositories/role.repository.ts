@@ -14,8 +14,10 @@ export class RoleRepository {
   ) {}
 
   findAll(companyId?: string): Promise<RoleEntity[]> {
-    const query = this.repository.createQueryBuilder('role').where('role.isActive = :isActive', { isActive: true });
-    
+    const query = this.repository
+      .createQueryBuilder('role')
+      .where('role.isActive = :isActive', { isActive: true });
+
     if (companyId) {
       query.andWhere('role.companyId = :companyId', { companyId });
     }
@@ -31,7 +33,9 @@ export class RoleRepository {
     take: number,
     companyId?: string,
   ): Promise<[RoleEntity[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('role').where('role.isActive = :isActive', { isActive: true });
+    const queryBuilder = this.repository
+      .createQueryBuilder('role')
+      .where('role.isActive = :isActive', { isActive: true });
 
     if (companyId) {
       queryBuilder.andWhere('role.companyId = :companyId', { companyId });
@@ -89,7 +93,7 @@ export class RoleRepository {
 
   findByCode(code: string, companyId?: string): Promise<RoleEntity | null> {
     const query = this.repository.createQueryBuilder('role').where('role.name = :code', { code });
-    
+
     if (companyId) {
       query.andWhere('role.companyId = :companyId', { companyId });
     }
@@ -109,4 +113,3 @@ export class RoleRepository {
     await this.repository.delete(id);
   }
 }
-

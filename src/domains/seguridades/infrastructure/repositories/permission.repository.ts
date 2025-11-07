@@ -30,8 +30,14 @@ export class PermissionRepository {
   /**
    * Encontrar permisos con paginación
    */
-  async findWithPagination(skip: number, take: number, type?: PermissionType): Promise<[PermissionEntity[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('permission').where('permission.isActive = :isActive', { isActive: true });
+  async findWithPagination(
+    skip: number,
+    take: number,
+    type?: PermissionType,
+  ): Promise<[PermissionEntity[], number]> {
+    const queryBuilder = this.repository
+      .createQueryBuilder('permission')
+      .where('permission.isActive = :isActive', { isActive: true });
 
     if (type) {
       queryBuilder.andWhere('permission.type = :type', { type });
@@ -115,4 +121,3 @@ export class PermissionRepository {
     await this.repository.delete(id);
   }
 }
-

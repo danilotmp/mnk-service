@@ -5,12 +5,21 @@ import { IsEmail, IsOptional, IsString, MinLength, IsUUID, IsBoolean } from 'cla
  * DTO para actualizar un usuario
  */
 export class UpdateUsuarioDto {
-  @ApiProperty({ description: 'Email del usuario', example: 'usuario@example.com', required: false })
+  @ApiProperty({
+    description: 'Email del usuario',
+    example: 'usuario@example.com',
+    required: false,
+  })
   @IsOptional()
   @IsEmail({}, { message: 'El email debe ser válido' })
   email?: string;
 
-  @ApiProperty({ description: 'Contraseña del usuario', example: 'Password123!', required: false, minLength: 6 })
+  @ApiProperty({
+    description: 'Contraseña del usuario',
+    example: 'Password123!',
+    required: false,
+    minLength: 6,
+  })
   @IsOptional()
   @IsString()
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
@@ -36,4 +45,3 @@ export class UpdateUsuarioDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

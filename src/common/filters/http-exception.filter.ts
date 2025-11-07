@@ -1,10 +1,4 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { createErrorResponse } from '../dto/response.dto';
 
@@ -26,7 +20,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'object' && 'result' in exceptionResponse) {
         // Ya tiene el formato correcto
         return response.status(status).json(exceptionResponse);
@@ -36,7 +30,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       // Filtrar statusCode del details si existe
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         details = Object.fromEntries(
-          Object.entries(exceptionResponse).filter(([key]) => key !== 'statusCode')
+          Object.entries(exceptionResponse).filter(([key]) => key !== 'statusCode'),
         );
       } else {
         details = exceptionResponse;
@@ -46,11 +40,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       details = exception.stack;
     }
 
-    const errorResponse = createErrorResponse(
-      message,
-      details,
-      status,
-    );
+    const errorResponse = createErrorResponse(message, details, status);
 
     console.error('Error capturado:', {
       status,

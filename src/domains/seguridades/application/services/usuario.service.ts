@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { UsuarioRepository } from '../../infrastructure/repositories/usuario.repository';
 import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageCode } from '@/common/messages/message-codes';
@@ -52,14 +56,18 @@ export class UsuarioService {
    */
   async findAll(lang: string = 'es') {
     const usuarios = await this.usuarioRepository.findAll();
-    
+
     // Retornar sin contraseñas
     const usuariosSinPassword = usuarios.map((usuario) => {
       const { password, ...userWithoutPassword } = usuario;
       return userWithoutPassword;
     });
 
-    return await this.responseHelper.successResponse(usuariosSinPassword, MessageCode.SUCCESS, lang);
+    return await this.responseHelper.successResponse(
+      usuariosSinPassword,
+      MessageCode.SUCCESS,
+      lang,
+    );
   }
 
   /**
@@ -67,12 +75,29 @@ export class UsuarioService {
    */
   async findPaginated(
     paginationDto: PaginationDto,
-    filters?: { companyId?: string; isActive?: boolean; searchTerm?: string },
+    filters?: { 
+      companyId?: string; 
+      isActive?: boolean; 
+      searchTerm?: string;
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+    },
     lang: string = 'es',
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
-    const [usuarios, total] = filters?.searchTerm || filters?.companyId || filters?.isActive !== undefined
+    // Aplicar filtros si se proporciona alguno
+    const hasFilters = filters && (
+      filters.searchTerm || 
+      filters.companyId || 
+      filters.isActive !== undefined ||
+      filters.email ||
+      filters.firstName ||
+      filters.lastName
+    );
+
+    const [usuarios, total] = hasFilters
       ? await this.usuarioRepository.searchWithPagination(skip, limit, filters)
       : await this.usuarioRepository.findWithPagination(skip, limit);
 
@@ -111,7 +136,11 @@ export class UsuarioService {
     // Retornar sin la contraseña
     const { password, ...userWithoutPassword } = usuario;
 
-    return await this.responseHelper.successResponse(userWithoutPassword, MessageCode.SUCCESS, lang);
+    return await this.responseHelper.successResponse(
+      userWithoutPassword,
+      MessageCode.SUCCESS,
+      lang,
+    );
   }
 
   /**
@@ -178,7 +207,11 @@ export class UsuarioService {
           await this.responseHelper.errorResponse(
             MessageCode.EMAIL_EXISTS,
             lang,
-            { error: 'EMAIL_EXISTS', email: updateUsuarioDto.email, message: 'Email already exists' },
+            {
+              error: 'EMAIL_EXISTS',
+              email: updateUsuarioDto.email,
+              message: 'Email already exists',
+            },
             409,
           ),
         );
@@ -231,4 +264,3 @@ export class UsuarioService {
     );
   }
 }
-

@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { CompanyEntity } from './company.entity';
 
 /**
@@ -44,4 +52,3 @@ export class BranchEntity {
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 }
-

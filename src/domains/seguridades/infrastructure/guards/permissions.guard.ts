@@ -2,6 +2,8 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { AuthorizationService } from '../../application/services/authorization.service';
+import { ResponseHelper } from '@/common/messages/response.helper';
+import { MessageCode, HttpStatusCode } from '@/common/messages/message-codes';
 
 /**
  * Guard para verificar permisos de usuario
@@ -12,6 +14,7 @@ export class PermissionsGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private authorizationService: AuthorizationService,
+    private responseHelper: ResponseHelper,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -26,12 +29,21 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    // Obtener usuario del request
     const request = context.switchToHttp().getRequest();
+    const lang = request.headers['accept-language'] || 'es';
     const user = request.user;
 
     if (!user || !user.userId) {
-      throw new ForbiddenException('Usuario no autenticado');
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.INSUFFICIENT_PERMISSIONS,
+        lang,
+        {
+          reason: 'USER_NOT_AUTHENTICATED',
+          route: request.originalUrl || request.url,
+        },
+        HttpStatusCode.FORBIDDEN,
+      );
+      throw new ForbiddenException(errorResponse);
     }
 
     // Verificar permisos
@@ -47,10 +59,19 @@ export class PermissionsGuard implements CanActivate {
     }
 
     if (!hasPermission) {
-      throw new ForbiddenException('No tienes permisos suficientes para acceder a este recurso');
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.INSUFFICIENT_PERMISSIONS,
+        lang,
+        {
+          route: request.originalUrl || request.url,
+          requiredPermissions: permissions,
+          requireAll,
+        },
+        HttpStatusCode.FORBIDDEN,
+      );
+      throw new ForbiddenException(errorResponse);
     }
 
     return true;
   }
 }
-

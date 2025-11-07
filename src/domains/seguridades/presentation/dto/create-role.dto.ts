@@ -20,7 +20,11 @@ export class CreateRoleDto {
   @IsString()
   displayName?: string;
 
-  @ApiProperty({ description: 'Descripción del rol', example: 'Rol con permisos administrativos', required: false })
+  @ApiProperty({
+    description: 'Descripción del rol',
+    example: 'Rol con permisos administrativos',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -30,9 +34,13 @@ export class CreateRoleDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiProperty({ description: 'Es rol del sistema', example: false, required: false, default: false })
+  @ApiProperty({
+    description: 'Es rol del sistema',
+    example: false,
+    required: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isSystem?: boolean;
 }
-

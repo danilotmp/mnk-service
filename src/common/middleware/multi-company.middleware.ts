@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 
 /**
  * Middleware para capturar y validar headers multiempresa
- * 
+ *
  * Headers esperados:
  * - company-code: Código de la empresa (requerido en algunas rutas)
  * - user-id: ID del usuario (opcional)
@@ -14,9 +14,9 @@ import { Request, Response, NextFunction } from 'express';
 export class MultiCompanyMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Extraer IP del cliente
-    const clientIp = 
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0] || 
-      req.socket.remoteAddress || 
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+      req.socket.remoteAddress ||
       'unknown';
     req['clientIp'] = clientIp;
 

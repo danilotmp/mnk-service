@@ -65,7 +65,8 @@ export class MenuService {
         menu: [],
         alert: {
           userId,
-          message: 'El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.',
+          message:
+            'El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.',
         },
       } as any;
     }
@@ -129,7 +130,8 @@ export class MenuService {
         alert: {
           roleId,
           roleName: role.name,
-          message: 'El rol no tiene permisos asignados. Debe configurar permisos en el sistema de administración.',
+          message:
+            'El rol no tiene permisos asignados. Debe configurar permisos en el sistema de administración.',
         },
       } as any;
     }

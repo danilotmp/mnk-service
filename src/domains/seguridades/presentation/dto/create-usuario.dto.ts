@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsUUID, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsUUID,
+  IsBoolean,
+} from 'class-validator';
 
 /**
  * DTO para crear un nuevo usuario
@@ -36,4 +44,3 @@ export class CreateUsuarioDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

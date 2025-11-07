@@ -35,9 +35,10 @@ export class RoleService {
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
-    const [roles, total] = filters?.searchTerm || filters?.isActive !== undefined
-      ? await this.roleRepository.searchWithPagination(skip, limit, filters)
-      : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId);
+    const [roles, total] =
+      filters?.searchTerm || filters?.isActive !== undefined
+        ? await this.roleRepository.searchWithPagination(skip, limit, filters)
+        : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId);
 
     const paginatedResponse = PaginationHelper.createPaginatedResponse(roles, total, page, limit);
 
@@ -68,7 +69,10 @@ export class RoleService {
    */
   async create(createRoleDto: CreateRoleDto, lang: string = 'es') {
     // Verificar que el nombre del rol no exista en la misma empresa
-    const existingRole = await this.roleRepository.findByCode(createRoleDto.name, createRoleDto.companyId);
+    const existingRole = await this.roleRepository.findByCode(
+      createRoleDto.name,
+      createRoleDto.companyId,
+    );
     if (existingRole) {
       throw new ConflictException(
         await this.responseHelper.errorResponse(
@@ -95,12 +99,7 @@ export class RoleService {
 
     const savedRole = await this.roleRepository.save(role);
 
-    return await this.responseHelper.successResponse(
-      savedRole,
-      MessageCode.SUCCESS,
-      lang,
-      201,
-    );
+    return await this.responseHelper.successResponse(savedRole, MessageCode.SUCCESS, lang, 201);
   }
 
   /**
@@ -161,11 +160,7 @@ export class RoleService {
     Object.assign(role, updateRoleDto);
     const updatedRole = await this.roleRepository.save(role);
 
-    return await this.responseHelper.successResponse(
-      updatedRole,
-      MessageCode.SUCCESS,
-      lang,
-    );
+    return await this.responseHelper.successResponse(updatedRole, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -211,4 +206,3 @@ export class RoleService {
     );
   }
 }
-

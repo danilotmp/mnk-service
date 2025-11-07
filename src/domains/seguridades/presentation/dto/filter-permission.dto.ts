@@ -30,4 +30,3 @@ export class FilterPermissionDto {
   @IsString()
   searchTerm?: string;
 }
-

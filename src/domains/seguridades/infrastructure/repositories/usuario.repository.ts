@@ -55,23 +55,42 @@ export class UsuarioRepository {
       companyId?: string;
       isActive?: boolean;
       searchTerm?: string;
+      email?: string;
+      firstName?: string;
+      lastName?: string;
     },
   ): Promise<[UsuarioEntity[], number]> {
     const queryBuilder = this.repository.createQueryBuilder('usuario');
 
+    // Filtro por companyId
     if (filters?.companyId) {
       queryBuilder.andWhere('usuario.companyId = :companyId', { companyId: filters.companyId });
     }
 
+    // Filtro por estado activo
     if (filters?.isActive !== undefined) {
       queryBuilder.andWhere('usuario.isActive = :isActive', { isActive: filters.isActive });
     }
 
+    // Búsqueda global (searchTerm busca en email, firstName y lastName)
     if (filters?.searchTerm) {
       queryBuilder.andWhere(
         '(usuario.email LIKE :searchTerm OR usuario.firstName LIKE :searchTerm OR usuario.lastName LIKE :searchTerm)',
         { searchTerm: `%${filters.searchTerm}%` },
       );
+    }
+
+    // Filtros específicos por campo
+    if (filters?.email) {
+      queryBuilder.andWhere('usuario.email LIKE :email', { email: `%${filters.email}%` });
+    }
+
+    if (filters?.firstName) {
+      queryBuilder.andWhere('usuario.firstName LIKE :firstName', { firstName: `%${filters.firstName}%` });
+    }
+
+    if (filters?.lastName) {
+      queryBuilder.andWhere('usuario.lastName LIKE :lastName', { lastName: `%${filters.lastName}%` });
     }
 
     queryBuilder.orderBy('usuario.createdAt', 'DESC');
@@ -84,4 +103,3 @@ export class UsuarioRepository {
     await this.repository.delete(id);
   }
 }
-

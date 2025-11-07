@@ -47,12 +47,21 @@ export class CreatePermissionDto {
   @IsString()
   menuId?: string;
 
-  @ApiProperty({ description: 'Descripción del permiso', example: 'Permite crear nuevos usuarios', required: false })
+  @ApiProperty({
+    description: 'Descripción del permiso',
+    example: 'Permite crear nuevos usuarios',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Es permiso público', example: false, required: false, default: false })
+  @ApiProperty({
+    description: 'Es permiso público',
+    example: false,
+    required: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
@@ -62,9 +71,13 @@ export class CreatePermissionDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiProperty({ description: 'Es permiso del sistema', example: false, required: false, default: false })
+  @ApiProperty({
+    description: 'Es permiso del sistema',
+    example: false,
+    required: false,
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   isSystem?: boolean;
 }
-

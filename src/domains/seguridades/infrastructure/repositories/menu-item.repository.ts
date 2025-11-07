@@ -29,6 +29,13 @@ export class MenuItemRepository {
     });
   }
 
+  findByRoute(route: string): Promise<MenuItemEntity | null> {
+    return this.repository.findOne({
+      where: { route, isActive: true },
+      relations: ['permission', 'parent'],
+    });
+  }
+
   findByMenuId(menuId: string): Promise<MenuItemEntity | null> {
     return this.repository.findOne({
       where: { menuId, isActive: true },
@@ -56,4 +63,3 @@ export class MenuItemRepository {
     await this.repository.delete(id);
   }
 }
-

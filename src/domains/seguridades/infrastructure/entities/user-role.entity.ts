@@ -46,4 +46,3 @@ export class UserRoleEntity {
   @JoinColumn({ name: 'role_id' })
   role: RoleEntity;
 }
-

@@ -17,5 +17,6 @@
   "ROLE_NOT_FOUND": "Papel não encontrado",
   "ROLE_NO_PERMISSIONS": "O papel não tem permissões atribuídas. Você deve configurar permissões para este papel no sistema de administração.",
   "COMPANY_NOT_FOUND": "Empresa não encontrada",
-  "BRANCH_NOT_FOUND": "Filial não encontrada"
+  "BRANCH_NOT_FOUND": "Filial não encontrada",
+  "INSUFFICIENT_PERMISSIONS": "Você não tem permissões suficientes para acessar este recurso"
 }

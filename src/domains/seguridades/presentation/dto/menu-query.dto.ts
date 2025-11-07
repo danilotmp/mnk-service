@@ -15,4 +15,3 @@ export class MenuQueryDto {
   @IsString()
   roleId: string;
 }
-

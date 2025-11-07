@@ -13,4 +13,3 @@ import { IvaCalculator } from './calculators/iva.calculator';
   exports: [CedulaValidator, RucValidator, IvaCalculator],
 })
 export class SharedModule {}
-

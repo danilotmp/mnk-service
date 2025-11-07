@@ -17,5 +17,6 @@
   "ROLE_NOT_FOUND": "Role not found",
   "ROLE_NO_PERMISSIONS": "The role has no assigned permissions. You must configure permissions for this role in the administration system.",
   "COMPANY_NOT_FOUND": "Company not found",
-  "BRANCH_NOT_FOUND": "Branch not found"
+  "BRANCH_NOT_FOUND": "Branch not found",
+  "INSUFFICIENT_PERMISSIONS": "You do not have sufficient permissions to access this resource"
 }

@@ -41,12 +41,11 @@ export class TransformResponseInterceptor<T> implements NestInterceptor<T, any> 
 
           // Transformar error al formato estándar
           // Filtrar statusCode del details si existe
-          const details = typeof response === 'object' && response !== null
-            ? Object.fromEntries(
-                Object.entries(response).filter(([key]) => key !== 'statusCode')
-              )
-            : response;
-          
+          const details =
+            typeof response === 'object' && response !== null
+              ? Object.fromEntries(Object.entries(response).filter(([key]) => key !== 'statusCode'))
+              : response;
+
           const errorResponse = createErrorResponse(
             error.message || 'Error en la operación',
             details,

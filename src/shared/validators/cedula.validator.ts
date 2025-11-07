@@ -31,7 +31,7 @@ export class CedulaValidator {
     // Algoritmo de validación
     let sum = 0;
     for (let i = 0; i < 9; i++) {
-      let multiplier = i % 2 === 0 ? 2 : 1;
+      const multiplier = i % 2 === 0 ? 2 : 1;
       let value = digitos[i] * multiplier;
       if (value >= 10) {
         value -= 9;
@@ -61,4 +61,3 @@ export class CedulaValidator {
     return '1718123456';
   }
 }
-

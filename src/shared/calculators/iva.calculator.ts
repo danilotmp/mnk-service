@@ -61,9 +61,7 @@ export class IvaCalculator {
    */
   getIVAPercentage(companyCode?: string): number {
     if (companyCode) {
-      return (
-        this.configService.get(`taxes.${companyCode}.iva`) || this.defaultIVA
-      );
+      return this.configService.get(`taxes.${companyCode}.iva`) || this.defaultIVA;
     }
     return this.defaultIVA;
   }
@@ -81,4 +79,3 @@ export class IvaCalculator {
     }).format(amount);
   }
 }
-

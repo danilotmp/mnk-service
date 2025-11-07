@@ -45,10 +45,10 @@ export class RucValidator {
    */
   private validateRucNatural(ruc: string): boolean {
     const digitos = ruc.split('').map(Number);
-    
+
     let sum = 0;
     for (let i = 0; i < 9; i++) {
-      let multiplier = i % 2 === 0 ? 2 : 1;
+      const multiplier = i % 2 === 0 ? 2 : 1;
       let value = digitos[i] * multiplier;
       if (value >= 10) {
         value -= 9;
@@ -66,7 +66,7 @@ export class RucValidator {
    */
   private validateRucJuridico(ruc: string): boolean {
     const digitos = ruc.split('').map(Number);
-    
+
     const multipliers = [4, 3, 2, 7, 6, 5, 4, 3, 2];
     let sum = 0;
 
@@ -89,4 +89,3 @@ export class RucValidator {
     return ruc.trim().replace(/[\s-]/g, '');
   }
 }
-

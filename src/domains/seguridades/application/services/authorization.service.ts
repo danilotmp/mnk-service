@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { UsuarioEntity } from '../../infrastructure/entities/usuario.entity';
 import { PermissionEntity, PermissionType } from '../../infrastructure/entities/permission.entity';
 import { PermissionRepository } from '../../infrastructure/repositories/permission.repository';
+import { MenuItemRepository } from '../../infrastructure/repositories/menu-item.repository';
 import { RoleEntity } from '../../infrastructure/entities/role.entity';
 
 /**
@@ -18,6 +19,7 @@ export class AuthorizationService {
     @InjectRepository(RoleEntity)
     private roleRepository: Repository<RoleEntity>,
     private permissionRepository: PermissionRepository,
+    private menuItemRepository: MenuItemRepository,
   ) {}
 
   /**
@@ -65,7 +67,7 @@ export class AuthorizationService {
    */
   async hasPermission(userId: string, permissionCode: string): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId);
-    return permissions.some((p) => p.code === permissionCode && p.isActive);
+    return this.userHasPermission(permissions.map((p) => p.code), permissionCode);
   }
 
   /**
@@ -74,7 +76,7 @@ export class AuthorizationService {
   async hasAnyPermission(userId: string, permissionCodes: string[]): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId);
     const userPermissionCodes = permissions.map((p) => p.code);
-    return permissionCodes.some((code) => userPermissionCodes.includes(code));
+    return permissionCodes.some((code) => this.userHasPermission(userPermissionCodes, code));
   }
 
   /**
@@ -83,7 +85,7 @@ export class AuthorizationService {
   async hasAllPermissions(userId: string, permissionCodes: string[]): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId);
     const userPermissionCodes = permissions.map((p) => p.code);
-    return permissionCodes.every((code) => userPermissionCodes.includes(code));
+    return permissionCodes.every((code) => this.userHasPermission(userPermissionCodes, code));
   }
 
   /**
@@ -91,7 +93,22 @@ export class AuthorizationService {
    */
   async canAccessRoute(userId: string | null, route: string): Promise<boolean> {
     // Buscar permiso por ruta
-    const permission = await this.permissionRepository.findByRoute(route);
+    let permission = await this.permissionRepository.findByRoute(route);
+
+    if (!permission) {
+      const menuItem = await this.menuItemRepository.findByRoute(route);
+      if (menuItem?.permission) {
+        permission = menuItem.permission;
+      }
+    }
+
+    if (!permission) {
+      const menuItems = await this.menuItemRepository.findAll();
+      const permissionCode = this.findPermissionCodeInMenu(menuItems, route);
+      if (permissionCode) {
+        permission = await this.permissionRepository.findByCode(permissionCode);
+      }
+    }
 
     if (!permission || !permission.isActive) {
       return false;
@@ -108,7 +125,64 @@ export class AuthorizationService {
     }
 
     // Si hay usuario, verificar si tiene permiso
-    return this.hasPermission(userId, permission.code);
+    const userPermissions = await this.getUserPermissions(userId);
+    return this.userHasPermission(userPermissions.map((p) => p.code), permission.code);
+  }
+
+  private findPermissionCodeInMenu(menuItems: any[], route: string): string | null {
+    for (const item of menuItems) {
+      if (!item) {
+        continue;
+      }
+
+      if (item.route === route && item.permission?.code) {
+        return item.permission.code;
+      }
+
+      if (Array.isArray(item.columns)) {
+        for (const column of item.columns) {
+          const found = this.findPermissionCodeInMenu(column?.items || [], route);
+          if (found) {
+            return found;
+          }
+        }
+      }
+
+      if (Array.isArray(item.submenu)) {
+        const found = this.findPermissionCodeInMenu(item.submenu, route);
+        if (found) {
+          return found;
+        }
+      }
+
+      if (Array.isArray(item.children)) {
+        const found = this.findPermissionCodeInMenu(item.children, route);
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private userHasPermission(userPermissionCodes: string[], permissionCode: string): boolean {
+    return userPermissionCodes.some((code) => this.matchesPermissionCode(code, permissionCode));
+  }
+
+  private matchesPermissionCode(grantedCode: string, requiredCode: string): boolean {
+    if (grantedCode === requiredCode) {
+      return true;
+    }
+
+    if (grantedCode?.includes('*')) {
+      const prefix = grantedCode.split('*')[0];
+      if (prefix && requiredCode.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -152,4 +226,3 @@ export class AuthorizationService {
     return permissions;
   }
 }
-

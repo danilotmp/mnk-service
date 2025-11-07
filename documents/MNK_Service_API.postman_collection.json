@@ -18,10 +18,9 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-                  "    pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-                  "    pm.environment.set(\"userId\", jsonData.data.user.id);",
-                  "    // roleId ya no es necesario, se obtiene del token del usuario"
+                  "    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "    pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -69,9 +68,9 @@
                   "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.data.accessToken) {",
-                  "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-                  "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-                  "        pm.environment.set(\"userId\", jsonData.data.user.id);",
+                  "        pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+                  "        pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "        pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
                   "    }",
                   "}"
                 ],
@@ -882,6 +881,108 @@
               "header": [],
               "cookie": [],
               "body": "{\n  \"data\": [],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n    \"details\": {\n      \"alert\": true,\n      \"userId\": \"uuid-del-usuario\",\n      \"message\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n      \"permissionsCount\": 0\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Validar acceso puntual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "description": "Idioma: es, en, pt"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/access?route=/security/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "access"],
+              "query": [
+                {
+                  "key": "route",
+                  "value": "/security/users",
+                  "description": "Ruta del frontend a validar"
+                }
+              ]
+            },
+            "description": "Valida si el usuario autenticado puede acceder a la ruta especificada. Devuelve 200 cuando tiene permiso y 403 cuando no está autorizado."
+          },
+          "response": [
+            {
+              "name": "Acceso permitido",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "es"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/seguridades/access?route=/security/users",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "seguridades", "access"],
+                  "query": [
+                    {
+                      "key": "route",
+                      "value": "/security/users"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"data\": {\n    \"route\": \"/security/users\",\n    \"access\": true\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "Acceso denegado",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  },
+                  {
+                    "key": "Accept-Language",
+                    "value": "es"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/seguridades/access?route=/security/roles",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "seguridades", "access"],
+                  "query": [
+                    {
+                      "key": "route",
+                      "value": "/security/roles"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"data\": null,\n  \"result\": {\n    \"statusCode\": 403,\n    \"description\": \"No tienes permisos suficientes para acceder a este recurso\",\n    \"details\": {\n      \"route\": \"/security/roles\"\n    }\n  }\n}"
             }
           ]
         }

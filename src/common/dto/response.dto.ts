@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * Estructura estandarizada de respuesta para todas las APIs
- * 
+ *
  * Todas las respuestas del sistema deben seguir esta estructura
  * para mantener consistencia entre front y back
  */
@@ -54,7 +54,11 @@ export class Result {
 /**
  * Helper para crear respuestas exitosas
  */
-export function createSuccessResponse<T>(data: T, description = 'Operación exitosa', statusCode = 200): ApiResponseDto<T> {
+export function createSuccessResponse<T>(
+  data: T,
+  description = 'Operación exitosa',
+  statusCode = 200,
+): ApiResponseDto<T> {
   return {
     data,
     result: {

@@ -12,17 +12,22 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AuthService } from '../../application/services/auth.service';
 import { UsuarioService } from '../../application/services/usuario.service';
 import { RoleService } from '../../application/services/role.service';
 import { PermissionService } from '../../application/services/permission.service';
+import { AccessService } from '../../application/services/access.service';
 import { MenuService } from '../../application/services/menu.service';
+import { AuthorizationService } from '../../application/services/authorization.service';
 import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageService } from '@/common/messages/message.service';
 import { MessageCode } from '@/common/messages/message-codes';
 import { JwtAuthGuard } from '../../infrastructure/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../infrastructure/guards/permissions.guard';
+import { Permissions } from '../../infrastructure/decorators/permissions.decorator';
 
 // DTOs de Autenticación
 import { LoginDto } from '../dto/login.dto';
@@ -32,23 +37,21 @@ import { RefreshTokenDto } from '../dto/refresh-token.dto';
 // DTOs de Usuarios
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
-import { FilterUsuarioDto } from '../dto/filter-usuario.dto';
 
 // DTOs de Roles
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
-import { FilterRoleDto } from '../dto/filter-role.dto';
 
 // DTOs de Permisos
 import { CreatePermissionDto } from '../dto/create-permission.dto';
 import { UpdatePermissionDto } from '../dto/update-permission.dto';
-import { FilterPermissionDto } from '../dto/filter-permission.dto';
 
 // DTOs de Paginación
-import { PaginationDto } from '@/common/dto/pagination.dto';
 import { PaginatedUsuarioQueryDto } from '../dto/paginated-usuario-query.dto';
 import { PaginatedRoleQueryDto } from '../dto/paginated-role-query.dto';
 import { PaginatedPermissionQueryDto } from '../dto/paginated-permission-query.dto';
+import { PaginatedAccessQueryDto } from '../dto/paginated-access-query.dto';
+import { CheckAccessQueryDto } from '../dto/check-access-query.dto';
 
 /**
  * Controller Principal del Dominio de Seguridades
@@ -70,7 +73,9 @@ export class SeguridadesController {
     private usuarioService: UsuarioService,
     private roleService: RoleService,
     private permissionService: PermissionService,
+    private accessService: AccessService,
     private menuService: MenuService,
+    private authorizationService: AuthorizationService,
     private responseHelper: ResponseHelper,
     private messageService: MessageService,
   ) {}
@@ -129,7 +134,8 @@ export class SeguridadesController {
   // ============================================
 
   @Get('usuarios')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.view'])
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Obtener usuarios con paginación',
@@ -139,7 +145,16 @@ export class SeguridadesController {
   @ApiResponse({ status: 401, description: 'No autenticado' })
   async getUsuarios(@Query() queryDto: PaginatedUsuarioQueryDto, @Request() req) {
     const lang = req.headers['accept-language'] || 'es';
-    const { page, limit, ...filters } = queryDto;
+    const { page, limit, search, searchTerm, ...otherFilters } = queryDto;
+    
+    // Normalizar el término de búsqueda: priorizar 'search' sobre 'searchTerm'
+    const normalizedSearchTerm = search || searchTerm;
+    
+    const filters = {
+      ...otherFilters,
+      ...(normalizedSearchTerm && { searchTerm: normalizedSearchTerm }),
+    };
+    
     return this.usuarioService.findPaginated(
       { page, limit },
       filters,
@@ -148,7 +163,8 @@ export class SeguridadesController {
   }
 
   @Get('usuarios/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.view'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener un usuario por ID' })
   @ApiParam({ name: 'id', description: 'ID del usuario (UUID)', type: String })
@@ -161,7 +177,8 @@ export class SeguridadesController {
   }
 
   @Post('usuarios')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.create'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear un nuevo usuario' })
@@ -175,7 +192,8 @@ export class SeguridadesController {
   }
 
   @Put('usuarios/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.edit'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar un usuario' })
   @ApiParam({ name: 'id', description: 'ID del usuario (UUID)', type: String })
@@ -189,7 +207,8 @@ export class SeguridadesController {
   }
 
   @Delete('usuarios/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.delete'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar un usuario (soft delete)' })
@@ -207,7 +226,8 @@ export class SeguridadesController {
   // ============================================
 
   @Get('roles')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['roles.view'])
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Obtener roles con paginación',
@@ -226,7 +246,8 @@ export class SeguridadesController {
   }
 
   @Get('roles/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['roles.view'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener un rol por ID' })
   @ApiParam({ name: 'id', description: 'ID del rol (UUID)', type: String })
@@ -239,7 +260,8 @@ export class SeguridadesController {
   }
 
   @Post('roles')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['roles.create'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear un nuevo rol' })
@@ -253,7 +275,8 @@ export class SeguridadesController {
   }
 
   @Put('roles/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['roles.edit'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar un rol' })
   @ApiParam({ name: 'id', description: 'ID del rol (UUID)', type: String })
@@ -267,7 +290,8 @@ export class SeguridadesController {
   }
 
   @Delete('roles/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['roles.delete'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar un rol (soft delete)' })
@@ -286,7 +310,8 @@ export class SeguridadesController {
   // ============================================
 
   @Get('permisos')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['permissions.view'])
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Obtener permisos con paginación',
@@ -305,7 +330,8 @@ export class SeguridadesController {
   }
 
   @Get('permisos/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['permissions.view'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener un permiso por ID' })
   @ApiParam({ name: 'id', description: 'ID del permiso (UUID)', type: String })
@@ -318,7 +344,8 @@ export class SeguridadesController {
   }
 
   @Post('permisos')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['permissions.manage'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear un nuevo permiso' })
@@ -332,7 +359,8 @@ export class SeguridadesController {
   }
 
   @Put('permisos/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['permissions.manage'])
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar un permiso' })
   @ApiParam({ name: 'id', description: 'ID del permiso (UUID)', type: String })
@@ -346,7 +374,8 @@ export class SeguridadesController {
   }
 
   @Delete('permisos/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['permissions.manage'])
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar un permiso (soft delete)' })
@@ -358,6 +387,83 @@ export class SeguridadesController {
   async removePermiso(@Param('id') id: string, @Request() req) {
     const lang = req.headers['accept-language'] || 'es';
     return this.permissionService.remove(id, lang);
+  }
+
+  // ============================================
+  // SECCIÓN: GESTIÓN DE ACCESOS (Usuario-Rol)
+  // ============================================
+
+  @Get('accesos')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['security.accesses.view'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener accesos (usuario-rol) con paginación' })
+  async getAccesses(@Query() queryDto: PaginatedAccessQueryDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    const { page, limit, userId, roleId, branchId, isActive } = queryDto;
+    return this.accessService.findPaginated(
+      { page, limit },
+      { userId, roleId, branchId, isActive },
+      lang,
+    );
+  }
+
+  @Get('accesos/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['security.accesses.view'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener un acceso específico (usuario-rol)' })
+  @ApiParam({ name: 'id', description: 'ID del acceso (UUID)', type: String })
+  async getAccess(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.accessService.findOne(id, lang);
+  }
+
+  // ============================================
+  // SECCIÓN: VALIDACIÓN DE ACCESO PUNTUAL
+  // ============================================
+
+  @Get('access')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Validar acceso del usuario autenticado a una ruta específica',
+    description:
+      'Permite al frontend validar si el usuario autenticado puede acceder a una ruta determinada. Devuelve 200 si tiene acceso y 403 en caso contrario.',
+  })
+  @ApiQuery({
+    name: 'route',
+    required: true,
+    type: String,
+    description: 'Ruta del frontend que se desea validar (ej: /security/users)',
+    example: '/security/users',
+  })
+  @ApiResponse({ status: 200, description: 'El usuario tiene acceso a la ruta solicitada' })
+  @ApiResponse({ status: 403, description: 'El usuario no tiene permisos para acceder a la ruta' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async checkAccess(@Query() queryDto: CheckAccessQueryDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    const userId = req.user?.userId || null;
+    const { route } = queryDto;
+    const normalizedRoute = this.normalizeRoute(route);
+
+    const canAccess = await this.authorizationService.canAccessRoute(userId, normalizedRoute);
+
+    if (!canAccess) {
+      const errorResponse = await this.responseHelper.errorResponse(
+        MessageCode.INSUFFICIENT_PERMISSIONS,
+        lang,
+        { route: normalizedRoute },
+        HttpStatus.FORBIDDEN,
+      );
+      throw new ForbiddenException(errorResponse);
+    }
+
+    return this.responseHelper.successResponse(
+      { route: normalizedRoute, access: true },
+      MessageCode.SUCCESS,
+      lang,
+    );
   }
 
   // ============================================
@@ -413,5 +519,36 @@ export class SeguridadesController {
     }
 
     return await this.responseHelper.successResponse(result, MessageCode.SUCCESS, lang);
+  }
+
+  private normalizeRoute(route: string): string {
+    if (!route) {
+      return '';
+    }
+
+    let cleanedRoute = route.trim();
+
+    try {
+      cleanedRoute = decodeURIComponent(cleanedRoute);
+    } catch (error) {
+      // Ignorar errores de decodificación y usar la ruta original
+    }
+
+    if (cleanedRoute.startsWith('http://') || cleanedRoute.startsWith('https://')) {
+      try {
+        const url = new URL(cleanedRoute);
+        cleanedRoute = url.pathname;
+      } catch (error) {
+        // Mantener la ruta original si no es una URL válida
+      }
+    }
+
+    cleanedRoute = cleanedRoute.split('?')[0].split('#')[0];
+
+    if (!cleanedRoute.startsWith('/')) {
+      cleanedRoute = `/${cleanedRoute}`;
+    }
+
+    return cleanedRoute || '/';
   }
 }

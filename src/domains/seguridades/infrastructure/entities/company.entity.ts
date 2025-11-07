@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { BranchEntity } from './branch.entity';
 
 /**
@@ -43,4 +50,3 @@ export class CompanyEntity {
   @OneToMany(() => BranchEntity, (branch) => branch.company)
   branches: BranchEntity[];
 }
-

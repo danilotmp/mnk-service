@@ -31,7 +31,11 @@ export class PaginationHelper {
   /**
    * Normaliza los parámetros de paginación
    */
-  static normalizeParams(paginationDto: PaginationDto): { page: number; limit: number; skip: number } {
+  static normalizeParams(paginationDto: PaginationDto): {
+    page: number;
+    limit: number;
+    skip: number;
+  } {
     const page = paginationDto.page || 1;
     const limit = paginationDto.limit || 10;
     const skip = this.calculateOffset(page, limit);

@@ -27,4 +27,3 @@ export class PaginatedRoleQueryDto extends PaginationDto {
   @IsString()
   searchTerm?: string;
 }
-

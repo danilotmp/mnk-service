@@ -20,7 +20,11 @@ export class UpdateRoleDto {
   @IsString()
   displayName?: string;
 
-  @ApiProperty({ description: 'Descripción del rol', example: 'Rol con permisos administrativos', required: false })
+  @ApiProperty({
+    description: 'Descripción del rol',
+    example: 'Rol con permisos administrativos',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -30,4 +34,3 @@ export class UpdateRoleDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

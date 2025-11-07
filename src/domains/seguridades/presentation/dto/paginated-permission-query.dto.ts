@@ -33,4 +33,3 @@ export class PaginatedPermissionQueryDto extends PaginationDto {
   @IsString()
   searchTerm?: string;
 }
-

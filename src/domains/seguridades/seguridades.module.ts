@@ -11,9 +11,11 @@ import { AuthorizationService } from './application/services/authorization.servi
 import { MenuService } from './application/services/menu.service';
 import { RoleService } from './application/services/role.service';
 import { PermissionService } from './application/services/permission.service';
+import { AccessService } from './application/services/access.service';
 import { UsuarioRepository } from './infrastructure/repositories/usuario.repository';
 import { RoleRepository } from './infrastructure/repositories/role.repository';
 import { PermissionRepository } from './infrastructure/repositories/permission.repository';
+import { UserRoleRepository } from './infrastructure/repositories/user-role.repository';
 import { MenuItemRepository } from './infrastructure/repositories/menu-item.repository';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
 import { UsuarioEntity } from './infrastructure/entities/usuario.entity';
@@ -59,9 +61,11 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     MenuService,
     RoleService,
     PermissionService,
+    AccessService,
     UsuarioRepository,
     RoleRepository,
     PermissionRepository,
+    UserRoleRepository,
     MenuItemRepository,
     JwtStrategy,
     JwtAuthGuard,
@@ -74,6 +78,7 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     MenuService,
     RoleService,
     PermissionService,
+    AccessService,
     JwtAuthGuard,
     PermissionsGuard,
   ],

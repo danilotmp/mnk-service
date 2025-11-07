@@ -41,7 +41,11 @@ export class UpdatePermissionDto {
   @IsString()
   menuId?: string;
 
-  @ApiProperty({ description: 'Descripción del permiso', example: 'Permite crear nuevos usuarios', required: false })
+  @ApiProperty({
+    description: 'Descripción del permiso',
+    example: 'Permite crear nuevos usuarios',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -56,4 +60,3 @@ export class UpdatePermissionDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

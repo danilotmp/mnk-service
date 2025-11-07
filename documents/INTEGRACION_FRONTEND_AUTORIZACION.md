@@ -14,24 +14,20 @@ Proporcionar ejemplos claros y prácticas para:
 
 ## 🔗 Endpoints Disponibles
 
-### 1. Obtener Menú
+### 1. Obtener Menú Privado
 
 ```
-GET /api/menu
-Authorization: Bearer <accessToken>  (Opcional)
+GET /api/seguridades/menu
+Authorization: Bearer <accessToken>
 Accept-Language: es | en | pt
 ```
 
 **Descripción:**
-- **Con token válido (usuario autenticado)**: Devuelve menú completo según permisos del rol del usuario (items públicos + privados según permisos)
-- **Sin token o token inválido (usuario no autenticado)**: Devuelve solo items públicos
+- **Requiere token JWT válido.** El backend extrae el `userId` del token y construye el menú privado combinando los permisos de todos los roles activos del usuario.
+- Si el usuario no tiene permisos asignados, devuelve un arreglo vacío y una alerta informativa en `result.details` para que el frontend muestre el mensaje correspondiente.
+- Los items públicos deben gestionarse en el frontend (por ejemplo, secciones de marketing o páginas públicas).
 
-**Comportamiento:**
-- No requiere autenticación obligatoria
-- Si se envía token válido, se usa para obtener los permisos del usuario desde su rol
-- Si no se envía token o es inválido, se trata como no autenticado y solo devuelve items públicos
-
-**Respuesta con token (autenticado):**
+**Respuesta (con permisos):**
 ```json
 {
   "data": [
@@ -52,11 +48,7 @@ Accept-Language: es | en | pt
         {
           "title": "Productos",
           "items": [
-            {
-              "id": "network-security",
-              "label": "Network Security",
-              "route": "/products/network-security"
-            }
+            { "id": "network-security", "label": "Network Security", "route": "/products/network-security" }
           ]
         }
       ]
@@ -82,25 +74,44 @@ Accept-Language: es | en | pt
 }
 ```
 
-**Respuesta sin token (no autenticado):**
+### 2. Validar Acceso Puntual
+
+```
+GET /api/seguridades/access?route=/ruta-del-frontend
+Authorization: Bearer <accessToken>
+Accept-Language: es | en | pt
+```
+
+**Descripción:**
+- Endpoint ligero para que el frontend pregunte si el usuario autenticado puede acceder a una ruta específica (por ejemplo `/security/users`).
+- Devuelve `200` cuando el usuario tiene el permiso asociado a la ruta o `403` cuando no está autorizado.
+- El backend normaliza la ruta (`/ruta`, sin dominio ni query params) y busca primero en la tabla de permisos y, si es necesario, en la estructura del menú.
+
+**Respuesta 200 (acceso permitido):**
 ```json
 {
-  "data": [
-    {
-      "id": "home",
-      "label": "Inicio",
-      "route": "/"
-    },
-    {
-      "id": "contact",
-      "label": "Contacto",
-      "route": "/main/contact"
-    }
-  ],
+  "data": {
+    "route": "/security/users",
+    "access": true
+  },
   "result": {
     "statusCode": 200,
     "description": "Operación exitosa",
     "details": null
+  }
+}
+```
+
+**Respuesta 403 (acceso denegado):**
+```json
+{
+  "data": null,
+  "result": {
+    "statusCode": 403,
+    "description": "No tienes permisos suficientes para acceder a este recurso",
+    "details": {
+      "route": "/security/users"
+    }
   }
 }
 ```
@@ -227,7 +238,39 @@ export const useMenu = (language: string = 'es') => {
 };
 ```
 
-### 3. Componente de Menú
+### 3. Servicio de Autorización Puntual
+
+```typescript
+// services/authorization.service.ts
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:3000/api';
+
+export class AuthorizationService {
+  /**
+   * Valida si el usuario autenticado puede acceder a la ruta indicada.
+   * Devuelve true cuando el backend responde 200, lanza error cuando responde 403.
+   */
+  static async checkAccess(
+    route: string,
+    accessToken: string,
+    language: string = 'es',
+  ): Promise<void> {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      'Accept-Language': language,
+      'Content-Type': 'application/json',
+    };
+
+    await axios.get(`${API_BASE_URL}/seguridades/access`, {
+      headers,
+      params: { route },
+    });
+  }
+}
+```
+
+### 4. Componente de Menú
 
 ```typescript
 // components/Menu.tsx
@@ -378,69 +421,76 @@ const styles = StyleSheet.create({
 });
 ```
 
-### 4. Protección de Rutas
+### 5. Protección de Rutas
 
 ```typescript
 // components/ProtectedRoute.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, Button } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigation } from '@react-navigation/native';
+import { AuthorizationService } from '../services/authorization.service';
+import axios from 'axios';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission?: string;
-  fallbackRoute?: string;
+  routePath: string; // Ruta exacta que se desea validar (ej: '/security/users')
+  fallbackScreen?: string;
+  language?: string;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  requiredPermission,
-  fallbackRoute = '/',
+  routePath,
+  fallbackScreen = 'Home',
+  language = 'es',
 }) => {
   const { isAuthenticated, accessToken } = useAuth();
   const navigation = useNavigation();
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasPermission, setHasPermission] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkPermission = async () => {
-      if (!isAuthenticated) {
-        // Si no está autenticado, redirigir a login
+    const validateAccess = async () => {
+      if (!isAuthenticated || !accessToken) {
         navigation.navigate('Login' as never);
         return;
       }
 
-      if (!requiredPermission) {
-        // Si no requiere permiso específico, solo necesita estar autenticado
+      try {
+        await AuthorizationService.checkAccess(routePath, accessToken, language);
         setHasPermission(true);
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setHasPermission(false);
+          setErrorMessage('No tienes permisos para acceder a esta página');
+        } else {
+          console.error('Error validando acceso:', error);
+          setErrorMessage('Ocurrió un error verificando los permisos');
+        }
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Aquí puedes implementar verificación de permisos
-      // Por ahora, si está autenticado, asumimos que tiene permiso
-      // En producción, deberías verificar el permiso específico con el backend
-      setHasPermission(true);
-      setLoading(false);
     };
 
-    checkPermission();
-  }, [isAuthenticated, requiredPermission]);
+    validateAccess();
+  }, [isAuthenticated, accessToken, routePath, fallbackScreen, language]);
 
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
-        <Text>Cargando...</Text>
+        <Text>Validando acceso...</Text>
       </View>
     );
   }
 
   if (!hasPermission) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>No tienes permisos para acceder a esta página</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <Text style={{ fontSize: 16, marginBottom: 16 }}>{errorMessage}</Text>
+        <Button title="Volver al inicio" onPress={() => navigation.navigate(fallbackScreen as never)} />
       </View>
     );
   }
@@ -449,7 +499,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 };
 ```
 
-### 5. Uso del Menú en Navegación
+### 6. Uso del Menú en Navegación
 
 ```typescript
 // App.tsx o tu componente principal
@@ -608,17 +658,16 @@ try {
 
 ### Endpoints
 
-- `GET /api/menu` - Menú del sistema
-  - Token opcional (no requiere autenticación obligatoria)
-  - Con token válido: devuelve menú completo según permisos del rol (items públicos + privados)
-  - Sin token o token inválido: devuelve solo items públicos
+- `GET /api/seguridades/menu` – Menú privado según permisos del usuario autenticado
+- `GET /api/seguridades/access?route=/ruta` – Validación puntual de acceso (200/403)
 
 ### Implementación
 
-1. **Servicio de Menú**: Clase para consumir endpoints
-2. **Hook Personalizado**: `useMenu()` para manejar estado
-3. **Componente de Menú**: Renderizar menú dinámico
-4. **Protección de Rutas**: Componente para proteger rutas privadas
+1. **Servicio de Menú**: Clase para consumir el endpoint del menú privado
+2. **Hook Personalizado**: `useMenu()` para manejar estado y refrescos
+3. **Servicio de Autorización Puntual**: `AuthorizationService.checkAccess()` para validar rutas
+4. **Componente de Menú**: Renderizar el menú dinámico
+5. **ProtectedRoute**: Consulta el endpoint puntual y redirige al usuario si recibe 403
 
 ### Características
 
@@ -626,7 +675,7 @@ try {
 ✅ Páginas públicas y privadas  
 ✅ Soporte multiidioma  
 ✅ Actualización automática  
-✅ Manejo de errores  
+✅ Manejo de errores y redirección en rutas no autorizadas  
 
 ---
 
