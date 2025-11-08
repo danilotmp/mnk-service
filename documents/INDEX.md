@@ -12,7 +12,12 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 
 ### 🧪 Testing y Pruebas
 - **POSTMAN_INSTRUCCIONES.md** - Cómo usar la colección de Postman
-- **MNK_Service_API.postman_collection.json** - Colección de Postman con todos los endpoints
+- **POSTMAN_ACTUALIZADO.md** - Cambios en la colección actualizada (Arquitectura 3 niveles) ⭐
+- **MNK_Service_API.postman_collection.json** - Colección de Postman ACTUALIZADA con todos los endpoints
+
+### 📱 Integración Frontend - Usuarios
+- **CONTEXTO_FRONTEND_ACTUALIZACION_USUARIOS.md** - Guía completa para actualización de usuarios ⭐
+- **QUICK_FRONTEND_USUARIOS.md** - Quick start para actualización de usuarios ⚡
 
 ### 🌱 Base de Datos
 - **SEED_INSTRUCCIONES.md** - Instrucciones para poblar la BDD con datos de prueba
@@ -24,8 +29,9 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 - **INTEGRACION_FRONTEND.md** - Guía de integración con React Native
 - **INTEGRACION_FRONTEND_AUTORIZACION.md** - Integración del sistema de autorización y menú dinámico ⭐
 
-### 🌐 Endpoints Públicos vs Privados
+### 🌐 Arquitectura de Endpoints
 - **ENDPOINTS_PUBLICOS_PRIVADOS.md** - Arquitectura de endpoints públicos y privados
+- **ARQUITECTURA_ENDPOINTS.md** - Modelo de 3 niveles: Contexto vs Administrativo ⭐
 
 ### 🌍 Sistema de Mensajes i18n
 - **GUIA_I18N_MENSAJES.md** - Guía completa del sistema de mensajes multilenguaje
@@ -35,6 +41,9 @@ Este directorio contiene toda la documentación del proyecto MNK Service.
 - **GUIA_AUTORIZACION.md** - Guía completa del sistema de autorización (roles, permisos, guards)
 - **DIAGRAMA_BDD_AUTORIZACION.md** - Diagrama de base de datos y relacionamiento lógico ⭐
 - **INTEGRACION_FRONTEND_AUTORIZACION.md** - Guía de integración del sistema de autorización en React Native ⭐
+
+### 🏢 Gestión Multiempresa
+- **ENDPOINTS_EMPRESAS_SUCURSALES.md** - Guía completa de endpoints para empresas y sucursales ⭐
 
 ### 📋 Contexto del Proyecto
 - **Planteamiento.docx** - Documento original con el planteamiento del proyecto
@@ -72,6 +81,9 @@ Lee: `GUIA_CONSUMO_API.md` - **IMPORTANTE: Gestión de tokens**
 ### ¿Cómo pruebo la API?
 Lee: `POSTMAN_INSTRUCCIONES.md` e importa la colección
 
+### ¿Qué cambió en la colección de Postman?
+Lee: `POSTMAN_ACTUALIZADO.md` - **Nueva arquitectura de 3 niveles**
+
 ### ¿Cómo creo datos de prueba?
 Lee: `SEED_INSTRUCCIONES.md`
 
@@ -89,6 +101,16 @@ Lee: `GUIA_AUTORIZACION.md` - **Roles, permisos y guards**
 
 ### ¿Cómo está estructurada la base de datos de autorización?
 Lee: `DIAGRAMA_BDD_AUTORIZACION.md` - **Diagrama de relaciones y jerarquía**
+
+### ¿Cómo gestiono empresas y sucursales?
+Lee: `ENDPOINTS_EMPRESAS_SUCURSALES.md` - **Endpoints completos con ejemplos**
+
+### ¿Cuál es la arquitectura de endpoints del sistema?
+Lee: `ARQUITECTURA_ENDPOINTS.md` - **Modelo de 3 niveles y filosofía de diseño**
+
+### ¿Cómo actualizo usuarios desde el frontend (con roles y sucursales)?
+Lee: `QUICK_FRONTEND_USUARIOS.md` - **Guía rápida 5 minutos**
+O: `CONTEXTO_FRONTEND_ACTUALIZACION_USUARIOS.md` - **Guía completa**
 
 ## 🔄 Actualización
 

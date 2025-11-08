@@ -43,18 +43,27 @@ async function seed() {
       console.log('⚠️  Ya existen datos de prueba. Actualizando permisos y menú de seguridad...');
       
       // Buscar y actualizar permisos de seguridad si no existen
-      let securityAllPerm = await permissionRepository.findOne({ where: { code: 'security.*' } });
-      if (!securityAllPerm) {
-        console.log('🔐 Creando permisos de seguridad...');
-        const securityPermissionsToCreate = [
-          { code: 'security.*', name: 'Acceso completo al módulo de seguridad', resource: 'security', action: '*' },
-          { code: 'security.users.view', name: 'Ver usuarios (seguridad)', resource: 'security', action: 'users.view' },
-          { code: 'security.roles.view', name: 'Ver roles (seguridad)', resource: 'security', action: 'roles.view' },
-          { code: 'security.permissions.view', name: 'Ver permisos (seguridad)', resource: 'security', action: 'permissions.view' },
-          { code: 'security.accesses.view', name: 'Ver accesos (seguridad)', resource: 'security', action: 'accesses.view' },
-        ];
-        
-        for (const perm of securityPermissionsToCreate) {
+      console.log('🔐 Verificando y creando permisos faltantes...');
+      const securityPermissionsToCreate = [
+        { code: 'security.*', name: 'Acceso completo al módulo de seguridad', resource: 'security', action: '*' },
+        { code: 'security.users.view', name: 'Ver usuarios (seguridad)', resource: 'security', action: 'users.view' },
+        { code: 'security.roles.view', name: 'Ver roles (seguridad)', resource: 'security', action: 'roles.view' },
+        { code: 'security.permissions.view', name: 'Ver permisos (seguridad)', resource: 'security', action: 'permissions.view' },
+        { code: 'security.accesses.view', name: 'Ver accesos (seguridad)', resource: 'security', action: 'accesses.view' },
+        { code: 'companies.view', name: 'Ver empresas', resource: 'companies', action: 'view' },
+        { code: 'companies.create', name: 'Crear empresas', resource: 'companies', action: 'create' },
+        { code: 'companies.edit', name: 'Editar empresas', resource: 'companies', action: 'edit' },
+        { code: 'companies.delete', name: 'Eliminar empresas', resource: 'companies', action: 'delete' },
+        { code: 'branches.view', name: 'Ver sucursales', resource: 'branches', action: 'view' },
+        { code: 'branches.create', name: 'Crear sucursales', resource: 'branches', action: 'create' },
+        { code: 'branches.edit', name: 'Editar sucursales', resource: 'branches', action: 'edit' },
+        { code: 'branches.delete', name: 'Eliminar sucursales', resource: 'branches', action: 'delete' },
+      ];
+      
+      let createdCount = 0;
+      for (const perm of securityPermissionsToCreate) {
+        const existing = await permissionRepository.findOne({ where: { code: perm.code } });
+        if (!existing) {
           const permission = permissionRepository.create({
             code: perm.code,
             name: perm.name,
@@ -66,12 +75,19 @@ async function seed() {
             isSystem: true,
           });
           await permissionRepository.save(permission);
+          createdCount++;
         }
+      }
+      
+      if (createdCount > 0) {
+        console.log(`✅ ${createdCount} permisos nuevos creados`);
         
-        // Asignar permisos de seguridad al rol admin
+        // Asignar todos los permisos al rol admin
         const adminRole = await roleRepository.findOne({ where: { name: 'admin' } });
         if (adminRole) {
+          console.log('🔒 Asignando permisos nuevos al rol admin...');
           const allPermissions = await permissionRepository.find({ where: { isActive: true } });
+          let assignedCount = 0;
           for (const permission of allPermissions) {
             const existing = await rolePermissionRepository.findOne({ 
               where: { roleId: adminRole.id, permissionId: permission.id } 
@@ -83,20 +99,26 @@ async function seed() {
                 isActive: true,
               });
               await rolePermissionRepository.save(rolePermission);
+              assignedCount++;
             }
           }
+          console.log(`✅ ${assignedCount} permisos asignados al rol admin`);
         }
+      } else {
+        console.log('✅ Todos los permisos ya existen');
       }
       
       // Buscar y actualizar menú de seguridad si no existe
       let securityMenu = await menuItemRepository.findOne({ where: { menuId: 'security' } });
       if (!securityMenu) {
         console.log('📋 Creando menú de seguridad...');
-        securityAllPerm = await permissionRepository.findOne({ where: { code: 'security.*' } });
+        const securityAllPerm = await permissionRepository.findOne({ where: { code: 'security.*' } });
         const securityUsersPerm = await permissionRepository.findOne({ where: { code: 'security.users.view' } });
         const securityRolesPerm = await permissionRepository.findOne({ where: { code: 'security.roles.view' } });
         const securityPermissionsPerm = await permissionRepository.findOne({ where: { code: 'security.permissions.view' } });
         const securityAccessesPerm = await permissionRepository.findOne({ where: { code: 'security.accesses.view' } });
+        const companiesViewPerm = await permissionRepository.findOne({ where: { code: 'companies.view' } });
+        const branchesViewPerm = await permissionRepository.findOne({ where: { code: 'branches.view' } });
         
         securityMenu = menuItemRepository.create({
           menuId: 'security',
@@ -138,6 +160,22 @@ async function seed() {
               description: 'Administración de accesos de usuarios',
               order: 4,
               permission: securityAccessesPerm ? { code: securityAccessesPerm.code } : undefined,
+            },
+            {
+              id: 'security-companies',
+              label: 'Empresas',
+              route: '/security/companies',
+              description: 'Administración de empresas del sistema',
+              order: 5,
+              permission: companiesViewPerm ? { code: companiesViewPerm.code } : undefined,
+            },
+            {
+              id: 'security-branches',
+              label: 'Sucursales',
+              route: '/security/branches',
+              description: 'Administración de sucursales del sistema',
+              order: 6,
+              permission: branchesViewPerm ? { code: branchesViewPerm.code } : undefined,
             },
           ],
           isActive: true,
@@ -290,6 +328,16 @@ async function seed() {
       { code: 'security.roles.view', name: 'Ver roles (seguridad)', resource: 'security', action: 'roles.view' },
       { code: 'security.permissions.view', name: 'Ver permisos (seguridad)', resource: 'security', action: 'permissions.view' },
       { code: 'security.accesses.view', name: 'Ver accesos (seguridad)', resource: 'security', action: 'accesses.view' },
+      // Empresas
+      { code: 'companies.view', name: 'Ver empresas', resource: 'companies', action: 'view' },
+      { code: 'companies.create', name: 'Crear empresas', resource: 'companies', action: 'create' },
+      { code: 'companies.edit', name: 'Editar empresas', resource: 'companies', action: 'edit' },
+      { code: 'companies.delete', name: 'Eliminar empresas', resource: 'companies', action: 'delete' },
+      // Sucursales
+      { code: 'branches.view', name: 'Ver sucursales', resource: 'branches', action: 'view' },
+      { code: 'branches.create', name: 'Crear sucursales', resource: 'branches', action: 'create' },
+      { code: 'branches.edit', name: 'Editar sucursales', resource: 'branches', action: 'edit' },
+      { code: 'branches.delete', name: 'Eliminar sucursales', resource: 'branches', action: 'delete' },
     ];
 
     const savedActionPermissions: PermissionEntity[] = [];
@@ -556,6 +604,8 @@ async function seed() {
       rolesView: savedActionPermissions.find((p) => p.code === 'security.roles.view'),
       permissionsView: savedActionPermissions.find((p) => p.code === 'security.permissions.view'),
       accessesView: savedActionPermissions.find((p) => p.code === 'security.accesses.view'),
+      companiesView: savedActionPermissions.find((p) => p.code === 'companies.view'),
+      branchesView: savedActionPermissions.find((p) => p.code === 'branches.view'),
     };
 
     // Crear menú de seguridad (administración)
@@ -612,6 +662,24 @@ async function seed() {
         description: 'Administración de accesos de usuarios',
         permissionId: securityPermissions.accessesView?.id,
         permissionCode: securityPermissions.accessesView?.code,
+      },
+      {
+        menuId: 'security-companies',
+        label: 'Empresas',
+        route: '/security/companies',
+        order: 5,
+        description: 'Administración de empresas del sistema',
+        permissionId: securityPermissions.companiesView?.id,
+        permissionCode: securityPermissions.companiesView?.code,
+      },
+      {
+        menuId: 'security-branches',
+        label: 'Sucursales',
+        route: '/security/branches',
+        order: 6,
+        description: 'Administración de sucursales del sistema',
+        permissionId: securityPermissions.branchesView?.id,
+        permissionCode: securityPermissions.branchesView?.code,
       },
     ];
 

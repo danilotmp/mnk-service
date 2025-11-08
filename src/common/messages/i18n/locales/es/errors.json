@@ -18,6 +18,8 @@
   "ROLE_NO_PERMISSIONS": "El rol no tiene permisos asignados. Debe configurar permisos para este rol en el sistema de administración.",
   "COMPANY_NOT_FOUND": "Empresa no encontrada",
   "BRANCH_NOT_FOUND": "Sucursal no encontrada",
+  "RESOURCE_NOT_FOUND": "Recurso no encontrado",
+  "RESOURCE_ALREADY_EXISTS": "El recurso ya existe",
   "INSUFFICIENT_PERMISSIONS": "No tienes permisos suficientes para acceder a este recurso"
 }
 

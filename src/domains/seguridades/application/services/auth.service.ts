@@ -2,6 +2,8 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsuarioRepository } from '../../infrastructure/repositories/usuario.repository';
+import { CompanyRepository } from '../../infrastructure/repositories/company.repository';
+import { BranchRepository } from '../../infrastructure/repositories/branch.repository';
 import { LoginDto } from '../../presentation/dto/login.dto';
 import { RegisterDto } from '../../presentation/dto/register.dto';
 import { RefreshTokenDto } from '../../presentation/dto/refresh-token.dto';
@@ -17,6 +19,8 @@ import * as bcrypt from 'bcrypt';
 export class AuthService {
   constructor(
     private usuarioRepository: UsuarioRepository,
+    private companyRepository: CompanyRepository,
+    private branchRepository: BranchRepository,
     private jwtService: JwtService,
     private configService: ConfigService,
     private responseHelper: ResponseHelper,
@@ -76,17 +80,48 @@ export class AuthService {
     usuario.lastLogin = new Date();
     await this.usuarioRepository.save(usuario);
 
+    // Obtener información completa de la empresa
+    const company = await this.companyRepository.findOne(usuario.companyId);
+    
+    // Obtener sucursales disponibles para el usuario
+    const branches = await this.branchRepository.findByCompany(usuario.companyId);
+
+    // Preparar información del usuario con contexto completo
+    const userResponse = {
+      id: usuario.id,
+      email: usuario.email,
+      firstName: usuario.firstName,
+      lastName: usuario.lastName,
+      companyId: usuario.companyId,
+      company: company ? {
+        id: company.id,
+        code: company.code,
+        name: company.name,
+        isActive: company.isActive,
+      } : null,
+      currentBranchId: usuario.currentBranchId,
+      availableBranches: branches.map(branch => ({
+        id: branch.id,
+        code: branch.code,
+        name: branch.name,
+        type: branch.type,
+        companyId: branch.companyId,
+        isActive: branch.isActive,
+      })),
+      // Por ahora solo la empresa actual, pero preparado para multi-empresa
+      availableCompanies: company ? [{
+        id: company.id,
+        code: company.code,
+        name: company.name,
+        isActive: company.isActive,
+      }] : [],
+    };
+
     return await this.responseHelper.successResponse(
       {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        user: {
-          id: usuario.id,
-          email: usuario.email,
-          firstName: usuario.firstName,
-          lastName: usuario.lastName,
-          companyId: usuario.companyId,
-        },
+        user: userResponse,
       },
       MessageCode.LOGIN_SUCCESS,
       lang,

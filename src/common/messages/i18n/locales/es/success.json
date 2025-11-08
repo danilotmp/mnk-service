@@ -5,6 +5,8 @@
   "REGISTER_SUCCESS": "Registro exitoso",
   "TOKEN_REFRESHED": "Token refrescado exitosamente",
   "PROFILE_UPDATED": "Perfil actualizado exitosamente",
-  "LOGOUT_SUCCESS": "Sesión cerrada exitosamente"
+  "LOGOUT_SUCCESS": "Sesión cerrada exitosamente",
+  "RESOURCE_CREATED": "Recurso creado exitosamente",
+  "RESOURCE_UPDATED": "Recurso actualizado exitosamente"
 }
 

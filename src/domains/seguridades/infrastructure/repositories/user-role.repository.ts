@@ -48,6 +48,38 @@ export class UserRoleRepository {
   async findOne(id: string): Promise<UserRoleEntity | null> {
     return this.repository.findOne({ where: { id }, relations: ['user', 'role'] });
   }
+
+  /**
+   * Buscar roles de un usuario
+   */
+  async findByUserId(userId: string): Promise<UserRoleEntity[]> {
+    return this.repository.find({
+      where: { userId, isActive: true },
+      relations: ['role'],
+    });
+  }
+
+  /**
+   * Eliminar todas las asignaciones de roles de un usuario
+   */
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.repository.delete({ userId });
+  }
+
+  /**
+   * Crear una asignación de rol
+   */
+  async create(data: Partial<UserRoleEntity>): Promise<UserRoleEntity> {
+    const userRole = this.repository.create(data);
+    return this.repository.save(userRole);
+  }
+
+  /**
+   * Guardar asignación de rol
+   */
+  async save(userRole: Partial<UserRoleEntity>): Promise<UserRoleEntity> {
+    return this.repository.save(userRole);
+  }
 }
 
 

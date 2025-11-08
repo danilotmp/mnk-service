@@ -22,6 +22,8 @@ import { PermissionService } from '../../application/services/permission.service
 import { AccessService } from '../../application/services/access.service';
 import { MenuService } from '../../application/services/menu.service';
 import { AuthorizationService } from '../../application/services/authorization.service';
+import { CompanyService } from '../../application/services/company.service';
+import { BranchService } from '../../application/services/branch.service';
 import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageService } from '@/common/messages/message.service';
 import { MessageCode } from '@/common/messages/message-codes';
@@ -37,6 +39,7 @@ import { RefreshTokenDto } from '../dto/refresh-token.dto';
 // DTOs de Usuarios
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
+import { UpdateUsuarioCompletoDto } from '../dto/update-usuario-completo.dto';
 
 // DTOs de Roles
 import { CreateRoleDto } from '../dto/create-role.dto';
@@ -45,6 +48,16 @@ import { UpdateRoleDto } from '../dto/update-role.dto';
 // DTOs de Permisos
 import { CreatePermissionDto } from '../dto/create-permission.dto';
 import { UpdatePermissionDto } from '../dto/update-permission.dto';
+
+// DTOs de Empresas
+import { CreateCompanyDto } from '../dto/create-company.dto';
+import { UpdateCompanyDto } from '../dto/update-company.dto';
+import { PaginatedCompanyQueryDto } from '../dto/paginated-company-query.dto';
+
+// DTOs de Sucursales
+import { CreateBranchDto } from '../dto/create-branch.dto';
+import { UpdateBranchDto } from '../dto/update-branch.dto';
+import { PaginatedBranchQueryDto } from '../dto/paginated-branch-query.dto';
 
 // DTOs de Paginación
 import { PaginatedUsuarioQueryDto } from '../dto/paginated-usuario-query.dto';
@@ -76,6 +89,8 @@ export class SeguridadesController {
     private accessService: AccessService,
     private menuService: MenuService,
     private authorizationService: AuthorizationService,
+    private companyService: CompanyService,
+    private branchService: BranchService,
     private responseHelper: ResponseHelper,
     private messageService: MessageService,
   ) {}
@@ -219,6 +234,144 @@ export class SeguridadesController {
   async removeUsuario(@Param('id') id: string, @Request() req) {
     const lang = req.headers['accept-language'] || 'es';
     return this.usuarioService.remove(id, lang);
+  }
+
+  // ============================================
+  // ACTUALIZACIÓN COMPLETA (Datos + Roles + Sucursales)
+  // ============================================
+
+  @Put('usuarios/:id/completo')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.edit'])
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Actualizar usuario completo (datos básicos + rol + sucursales)',
+    description: `
+    Endpoint TODO-EN-UNO para formularios de edición de usuarios.
+    
+    ✅ Actualiza datos básicos del usuario
+    ✅ Asigna rol principal (opcional)
+    ✅ Asigna sucursales disponibles (opcional)
+    
+    **Uso típico**: Formulario de edición que maneja todo en una sola petición.
+    
+    **Ventaja**: El frontend solo hace UNA llamada para actualizar todo.
+    `,
+  })
+  @ApiParam({ name: 'id', description: 'ID del usuario (UUID)', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario actualizado completamente',
+    schema: {
+      example: {
+        data: {
+          id: 'uuid-usuario',
+          email: 'usuario@empresa.com',
+          firstName: 'Juan',
+          lastName: 'Pérez',
+          companyId: 'uuid-empresa',
+          isActive: true,
+          availableBranches: [
+            { id: 'uuid-1', code: 'SUC001', name: 'Sucursal Centro' },
+            { id: 'uuid-2', code: 'SUC002', name: 'Sucursal Norte' },
+          ],
+          currentBranchId: 'uuid-1',
+        },
+        result: {
+          statusCode: 200,
+          description: 'Recurso actualizado exitosamente',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Usuario, rol o sucursal no encontrado' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o sucursal no pertenece a la empresa' })
+  @ApiResponse({ status: 409, description: 'El email ya existe' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async updateUsuarioCompleto(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateUsuarioCompletoDto,
+    @Request() req,
+  ) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.usuarioService.updateCompleto(id, updateDto, lang);
+  }
+
+  // ============================================
+  // CONSULTAR ROLES Y SUCURSALES DE USUARIO
+  // ============================================
+
+  @Get('usuarios/:id/roles')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.view'])
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Obtener roles asignados a un usuario',
+    description: 'Retorna la lista de roles que tiene asignados el usuario.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del usuario (UUID)', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de roles del usuario',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 'uuid-rol',
+            name: 'admin',
+            displayName: 'Administrador',
+            description: 'Rol con todos los permisos',
+            isActive: true,
+            assignedAt: '2024-01-01T10:00:00.000Z',
+          },
+        ],
+        result: {
+          statusCode: 200,
+          description: 'Operación exitosa',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getUserRoles(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.usuarioService.getUserRoles(id, lang);
+  }
+
+  @Get('usuarios/:id/sucursales')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['users.view'])
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Obtener sucursales asignadas a un usuario',
+    description: 'Retorna la lista de sucursales disponibles para el usuario y su sucursal actual.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del usuario (UUID)', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Sucursales del usuario',
+    schema: {
+      example: {
+        data: {
+          currentBranchId: 'uuid-sucursal-1',
+          availableBranches: [
+            { id: 'uuid-1', code: 'SUC001', name: 'Sucursal Centro' },
+            { id: 'uuid-2', code: 'SUC002', name: 'Sucursal Norte' },
+          ],
+        },
+        result: {
+          statusCode: 200,
+          description: 'Operación exitosa',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getUserBranches(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.usuarioService.getUserBranches(id, lang);
   }
 
   // ============================================
@@ -519,6 +672,197 @@ export class SeguridadesController {
     }
 
     return await this.responseHelper.successResponse(result, MessageCode.SUCCESS, lang);
+  }
+
+  // ============================================
+  // SECCIÓN: GESTIÓN DE EMPRESAS (ADMINISTRATIVO)
+  // ============================================
+
+  @Get('admin/empresas')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['companies.view'])
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Obtener empresas con paginación',
+    description: 'Obtiene una lista paginada de empresas. Puede incluir filtros opcionales.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de empresas obtenida exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getCompanies(@Query() queryDto: PaginatedCompanyQueryDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    const { page, limit, search, ...otherFilters } = queryDto;
+    
+    const filters = {
+      ...otherFilters,
+      ...(search && { search }),
+    };
+    
+    return this.companyService.findPaginated(
+      { page, limit },
+      filters,
+      lang,
+    );
+  }
+
+  @Get('admin/empresas/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['companies.view'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener una empresa por ID (Admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la empresa (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Empresa obtenida exitosamente' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getCompany(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.companyService.findOne(id, lang);
+  }
+
+  @Post('admin/empresas')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['companies.create'])
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Crear una nueva empresa' })
+  @ApiResponse({ status: 201, description: 'Empresa creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 409, description: 'El código ya existe' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async createCompany(@Body() createCompanyDto: CreateCompanyDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.companyService.create(createCompanyDto, lang);
+  }
+
+  @Put('admin/empresas/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['companies.edit'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar una empresa (Admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la empresa (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Empresa actualizada exitosamente' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 409, description: 'El código ya existe' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async updateCompany(@Param('id') id: string, @Body() updateCompanyDto: UpdateCompanyDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.companyService.update(id, updateCompanyDto, lang);
+  }
+
+  @Delete('admin/empresas/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['companies.delete'])
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Eliminar una empresa (soft delete)' })
+  @ApiParam({ name: 'id', description: 'ID de la empresa (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Empresa eliminada exitosamente' })
+  @ApiResponse({ status: 404, description: 'Empresa no encontrada' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async removeCompany(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.companyService.remove(id, lang);
+  }
+
+  // ============================================
+  // SECCIÓN: GESTIÓN DE SUCURSALES (ADMINISTRATIVO)
+  // ============================================
+
+  @Get('admin/sucursales')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.view'])
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Obtener sucursales con paginación',
+    description: 'Obtiene una lista paginada de sucursales. Puede incluir filtros opcionales como companyId.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de sucursales obtenida exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getBranches(@Query() queryDto: PaginatedBranchQueryDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    const { page, limit, search, ...otherFilters } = queryDto;
+    
+    const filters = {
+      ...otherFilters,
+      ...(search && { search }),
+    };
+    
+    return this.branchService.findPaginated(
+      { page, limit },
+      filters,
+      lang,
+    );
+  }
+
+  @Get('admin/sucursales/empresa/:companyId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.view'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener todas las sucursales de una empresa (Admin)' })
+  @ApiParam({ name: 'companyId', description: 'ID de la empresa (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Lista de sucursales obtenida exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getBranchesByCompany(@Param('companyId') companyId: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.branchService.findByCompany(companyId, lang);
+  }
+
+  @Get('admin/sucursales/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.view'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener una sucursal por ID' })
+  @ApiParam({ name: 'id', description: 'ID de la sucursal (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Sucursal obtenida exitosamente' })
+  @ApiResponse({ status: 404, description: 'Sucursal no encontrada' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getBranch(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.branchService.findOne(id, lang);
+  }
+
+  @Post('admin/sucursales')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.create'])
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Crear una nueva sucursal (Admin)' })
+  @ApiResponse({ status: 201, description: 'Sucursal creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 409, description: 'El código ya existe' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async createBranch(@Body() createBranchDto: CreateBranchDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.branchService.create(createBranchDto, lang);
+  }
+
+  @Put('admin/sucursales/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.edit'])
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar una sucursal' })
+  @ApiParam({ name: 'id', description: 'ID de la sucursal (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Sucursal actualizada exitosamente' })
+  @ApiResponse({ status: 404, description: 'Sucursal no encontrada' })
+  @ApiResponse({ status: 409, description: 'El código ya existe' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async updateBranch(@Param('id') id: string, @Body() updateBranchDto: UpdateBranchDto, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.branchService.update(id, updateBranchDto, lang);
+  }
+
+  @Delete('admin/sucursales/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions(['branches.delete'])
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Eliminar una sucursal (soft delete - Admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la sucursal (UUID)', type: String })
+  @ApiResponse({ status: 200, description: 'Sucursal eliminada exitosamente' })
+  @ApiResponse({ status: 404, description: 'Sucursal no encontrada' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async removeBranch(@Param('id') id: string, @Request() req) {
+    const lang = req.headers['accept-language'] || 'es';
+    return this.branchService.remove(id, lang);
   }
 
   private normalizeRoute(route: string): string {

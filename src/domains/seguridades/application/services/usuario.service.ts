@@ -2,12 +2,17 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsuarioRepository } from '../../infrastructure/repositories/usuario.repository';
+import { UserRoleRepository } from '../../infrastructure/repositories/user-role.repository';
+import { BranchRepository } from '../../infrastructure/repositories/branch.repository';
+import { RoleService } from './role.service';
 import { ResponseHelper } from '@/common/messages/response.helper';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreateUsuarioDto } from '../../presentation/dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../../presentation/dto/update-usuario.dto';
+import { UpdateUsuarioCompletoDto } from '../../presentation/dto/update-usuario-completo.dto';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { PaginationHelper } from '@/common/helpers/pagination.helper';
 import * as bcrypt from 'bcrypt';
@@ -19,6 +24,9 @@ import * as bcrypt from 'bcrypt';
 export class UsuarioService {
   constructor(
     private usuarioRepository: UsuarioRepository,
+    private userRoleRepository: UserRoleRepository,
+    private branchRepository: BranchRepository,
+    private roleService: RoleService,
     private responseHelper: ResponseHelper,
   ) {}
 
@@ -259,6 +267,204 @@ export class UsuarioService {
 
     return await this.responseHelper.successResponse(
       { id, message: 'Usuario eliminado exitosamente' },
+      MessageCode.SUCCESS,
+      lang,
+    );
+  }
+
+  // ============================================
+  // MÉTODOS PARA ACTUALIZACIÓN COMPLETA
+  // ============================================
+
+  /**
+   * Actualizar usuario de forma completa
+   * Incluye datos básicos + roles + sucursales
+   */
+  async updateCompleto(id: string, updateDto: UpdateUsuarioCompletoDto, lang: string = 'es') {
+    const usuario = await this.usuarioRepository.findOne(id);
+    if (!usuario) {
+      throw new NotFoundException(
+        await this.responseHelper.errorResponse(
+          MessageCode.USER_NOT_FOUND,
+          lang,
+          { error: 'USER_NOT_FOUND', userId: id, message: 'User not found in database' },
+          404,
+        ),
+      );
+    }
+
+    // 1. Actualizar datos básicos del usuario
+    if (updateDto.email && updateDto.email !== usuario.email) {
+      const existingUser = await this.usuarioRepository.findByEmail(updateDto.email);
+      if (existingUser && existingUser.id !== id) {
+        throw new ConflictException(
+          await this.responseHelper.errorResponse(
+            MessageCode.EMAIL_EXISTS,
+            lang,
+            { error: 'EMAIL_EXISTS', email: updateDto.email, message: 'Email already exists' },
+            409,
+          ),
+        );
+      }
+      usuario.email = updateDto.email;
+    }
+
+    if (updateDto.password) {
+      const salt = await bcrypt.genSalt(10);
+      usuario.password = await bcrypt.hash(updateDto.password, salt);
+    }
+
+    if (updateDto.firstName) usuario.firstName = updateDto.firstName;
+    if (updateDto.lastName) usuario.lastName = updateDto.lastName;
+    if (updateDto.companyId) usuario.companyId = updateDto.companyId;
+    if (updateDto.isActive !== undefined) usuario.isActive = updateDto.isActive;
+
+    // 2. Gestionar rol (si se proporciona)
+    if (updateDto.roleId) {
+      // Verificar que el rol exista
+      const roleResponse = await this.roleService.findOne(updateDto.roleId, lang);
+      if (!roleResponse.data) {
+        throw new BadRequestException(
+          await this.responseHelper.errorResponse(
+            MessageCode.ROLE_NOT_FOUND,
+            lang,
+            { error: 'ROLE_NOT_FOUND', roleId: updateDto.roleId },
+            404,
+          ),
+        );
+      }
+
+      // Eliminar roles actuales del usuario
+      await this.userRoleRepository.deleteByUserId(id);
+
+      // Asignar el nuevo rol
+      await this.userRoleRepository.create({
+        userId: id,
+        roleId: updateDto.roleId,
+        isActive: true,
+      });
+    }
+
+    // 3. Gestionar sucursales (si se proporcionan)
+    if (updateDto.branchIds && Array.isArray(updateDto.branchIds)) {
+      // Validar que todas las sucursales existan y pertenezcan a la empresa del usuario
+      const validBranches = [];
+      for (const branchId of updateDto.branchIds) {
+        const branch = await this.branchRepository.findOne(branchId);
+        if (!branch) {
+          throw new BadRequestException(
+            await this.responseHelper.errorResponse(
+              MessageCode.BRANCH_NOT_FOUND,
+              lang,
+              { error: 'BRANCH_NOT_FOUND', branchId },
+              404,
+            ),
+          );
+        }
+        if (branch.companyId !== usuario.companyId) {
+          throw new BadRequestException(
+            await this.responseHelper.errorResponse(
+              MessageCode.BUSINESS_RULE_VIOLATION,
+              lang,
+              { error: 'BRANCH_COMPANY_MISMATCH', branchId, message: 'Branch does not belong to user company' },
+              400,
+            ),
+          );
+        }
+        validBranches.push({
+          id: branch.id,
+          code: branch.code,
+          name: branch.name,
+        });
+      }
+
+      // Actualizar sucursales disponibles
+      usuario.availableBranches = validBranches;
+
+      // Si no tiene sucursal actual o la actual no está en la nueva lista, asignar la primera
+      if (!updateDto.branchIds.includes(usuario.currentBranchId) && validBranches.length > 0) {
+        usuario.currentBranchId = validBranches[0].id;
+      }
+    }
+
+    // 4. Guardar usuario actualizado
+    const updatedUsuario = await this.usuarioRepository.save(usuario);
+
+    // 5. Retornar sin la contraseña
+    const { password, ...userWithoutPassword } = updatedUsuario;
+
+    return await this.responseHelper.successResponse(
+      userWithoutPassword,
+      MessageCode.RESOURCE_UPDATED,
+      lang,
+    );
+  }
+
+  // ============================================
+  // MÉTODOS PARA CONSULTAR ROLES Y SUCURSALES
+  // ============================================
+
+  /**
+   * Obtener roles de un usuario
+   */
+  async getUserRoles(userId: string, lang: string = 'es') {
+    // Verificar que el usuario exista
+    const usuario = await this.usuarioRepository.findOne(userId);
+    if (!usuario) {
+      throw new NotFoundException(
+        await this.responseHelper.errorResponse(
+          MessageCode.USER_NOT_FOUND,
+          lang,
+          { error: 'USER_NOT_FOUND', userId, message: 'User not found in database' },
+          404,
+        ),
+      );
+    }
+
+    // Obtener roles del usuario
+    const userRoles = await this.userRoleRepository.findByUserId(userId);
+
+    const roles = userRoles.map(ur => ({
+      id: ur.role.id,
+      name: ur.role.name,
+      displayName: ur.role.displayName,
+      description: ur.role.description,
+      isActive: ur.isActive,
+      assignedAt: ur.createdAt,
+    }));
+
+    return await this.responseHelper.successResponse(
+      roles,
+      MessageCode.SUCCESS,
+      lang,
+    );
+  }
+
+  /**
+   * Obtener sucursales de un usuario
+   */
+  async getUserBranches(userId: string, lang: string = 'es') {
+    // Verificar que el usuario exista
+    const usuario = await this.usuarioRepository.findOne(userId);
+    if (!usuario) {
+      throw new NotFoundException(
+        await this.responseHelper.errorResponse(
+          MessageCode.USER_NOT_FOUND,
+          lang,
+          { error: 'USER_NOT_FOUND', userId, message: 'User not found in database' },
+          404,
+        ),
+      );
+    }
+
+    // Obtener sucursales disponibles del usuario
+    const branches = usuario.availableBranches || [];
+
+    return await this.responseHelper.successResponse(
+      {
+        currentBranchId: usuario.currentBranchId,
+        availableBranches: branches,
+      },
       MessageCode.SUCCESS,
       lang,
     );

@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { MessagesModule } from '@/common/messages/messages.module';
 import { SeguridadesController } from './presentation/controllers/seguridades.controller';
+import { ProfileController } from './presentation/controllers/profile.controller';
 import { AuthService } from './application/services/auth.service';
 import { UsuarioService } from './application/services/usuario.service';
 import { AuthorizationService } from './application/services/authorization.service';
@@ -12,11 +13,15 @@ import { MenuService } from './application/services/menu.service';
 import { RoleService } from './application/services/role.service';
 import { PermissionService } from './application/services/permission.service';
 import { AccessService } from './application/services/access.service';
+import { CompanyService } from './application/services/company.service';
+import { BranchService } from './application/services/branch.service';
 import { UsuarioRepository } from './infrastructure/repositories/usuario.repository';
 import { RoleRepository } from './infrastructure/repositories/role.repository';
 import { PermissionRepository } from './infrastructure/repositories/permission.repository';
 import { UserRoleRepository } from './infrastructure/repositories/user-role.repository';
 import { MenuItemRepository } from './infrastructure/repositories/menu-item.repository';
+import { CompanyRepository } from './infrastructure/repositories/company.repository';
+import { BranchRepository } from './infrastructure/repositories/branch.repository';
 import { JwtStrategy } from './infrastructure/auth/jwt.strategy';
 import { UsuarioEntity } from './infrastructure/entities/usuario.entity';
 import { CompanyEntity } from './infrastructure/entities/company.entity';
@@ -53,7 +58,10 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     }),
     MessagesModule, // Importar MessagesModule para tener acceso a ResponseHelper
   ],
-  controllers: [SeguridadesController],
+  controllers: [
+    SeguridadesController,
+    ProfileController,
+  ],
   providers: [
     AuthService,
     UsuarioService,
@@ -62,11 +70,15 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     RoleService,
     PermissionService,
     AccessService,
+    CompanyService,
+    BranchService,
     UsuarioRepository,
     RoleRepository,
     PermissionRepository,
     UserRoleRepository,
     MenuItemRepository,
+    CompanyRepository,
+    BranchRepository,
     JwtStrategy,
     JwtAuthGuard,
     PermissionsGuard,
@@ -79,6 +91,8 @@ import { PermissionsGuard } from './infrastructure/guards/permissions.guard';
     RoleService,
     PermissionService,
     AccessService,
+    CompanyService,
+    BranchService,
     JwtAuthGuard,
     PermissionsGuard,
   ],

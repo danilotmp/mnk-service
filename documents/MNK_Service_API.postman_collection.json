@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "MNK Service API",
-    "description": "Colección de endpoints para la API MNK Service - Backend multiempresa con DDD + Hexagonal Architecture, autorización y menú dinámico",
+    "description": "Colección completa de endpoints para la API MNK Service - Backend multiempresa con DDD + Hexagonal Architecture, autorización y menú dinámico. Incluye arquitectura de 3 niveles: Contexto (sin permisos) y Administrativo (con permisos).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "mnk-service-001"
   },
@@ -21,6 +21,14 @@
                   "    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
                   "    pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
                   "    pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
+                  "    ",
+                  "    // Guardar companyId y branchId si existen",
+                  "    if (jsonData.data.user.companyId) {",
+                  "        pm.collectionVariables.set(\"companyId\", jsonData.data.user.companyId);",
+                  "    }",
+                  "    if (jsonData.data.user.currentBranchId) {",
+                  "        pm.collectionVariables.set(\"branchId\", jsonData.data.user.currentBranchId);",
+                  "    }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -54,7 +62,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "seguridades", "auth", "login"]
             },
-            "description": "Iniciar sesión y obtener tokens JWT\n\n**Credenciales de Prueba:**\n- Admin: admin@mnksolutions.com / Admin123!\n- Usuario: test@mnksolutions.com / Test123!"
+            "description": "Iniciar sesión y obtener tokens JWT\n\n**⭐ NUEVO: Response Mejorado**\nAhora incluye:\n- Información completa de la empresa\n- Lista de sucursales disponibles\n- Contexto completo del usuario\n\n**Credenciales de Prueba:**\n- Admin: admin@mnksolutions.com / Admin123!\n- Usuario: test@mnksolutions.com / Test123!"
           },
           "response": []
         },
@@ -177,6 +185,135 @@
       ]
     },
     {
+      "name": "🆕 Contexto del Usuario (Sin Permisos)",
+      "description": "Endpoints para que el usuario acceda a SU contexto sin necesidad de permisos administrativos. Solo requiere JWT válido.",
+      "item": [
+        {
+          "name": "Mis Empresas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me/companies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me", "companies"]
+            },
+            "description": "Obtener las empresas a las que tengo acceso.\n\n✅ **No requiere permisos administrativos** - Solo JWT válido.\n\nDevuelve un array de empresas disponibles para el usuario autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "Mi Empresa por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me/companies/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me", "companies", "{{companyId}}"]
+            },
+            "description": "Obtener detalles de UNA de mis empresas.\n\n**Validación**: Solo puedo ver empresas a las que tengo acceso.\n\n✅ **No requiere permisos administrativos** - Solo JWT válido."
+          },
+          "response": []
+        },
+        {
+          "name": "Mis Sucursales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me", "branches"]
+            },
+            "description": "Obtener las sucursales de MI empresa.\n\n**Uso típico**: Llenar dropdown de sucursales para cambio de contexto.\n\n✅ **No requiere permisos administrativos** - Solo JWT válido."
+          },
+          "response": []
+        },
+        {
+          "name": "Mi Sucursal por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me/branches/{{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me", "branches", "{{branchId}}"]
+            },
+            "description": "Obtener detalles de UNA de mis sucursales.\n\n**Validación**: Solo puedo ver sucursales de mi empresa.\n\n✅ **No requiere permisos administrativos** - Solo JWT válido."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar Sucursal Activa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me/switch-branch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me", "switch-branch"]
+            },
+            "description": "Cambiar mi contexto de sucursal actual.\n\n**Uso típico**: Cuando usuario selecciona otra sucursal en el dropdown.\n\n**Validación**: Solo puedo cambiar a sucursales de mi empresa.\n\n✅ **No requiere permisos administrativos** - Solo JWT válido."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Usuarios",
       "item": [
         {
@@ -225,9 +362,9 @@
                   "disabled": true
                 },
                 {
-                  "key": "searchTerm",
+                  "key": "search",
                   "value": "",
-                  "description": "Búsqueda en email, nombre y apellido (opcional)",
+                  "description": "Búsqueda global en email, nombre y apellido (opcional)",
                   "disabled": true
                 }
               ]
@@ -261,7 +398,7 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "uuid-del-usuario",
+                  "value": "{{userId}}",
                   "description": "ID del usuario (UUID)"
                 }
               ]
@@ -294,7 +431,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"uuid-de-empresa\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"{{companyId}}\",\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/usuarios",
@@ -338,7 +475,7 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "uuid-del-usuario",
+                  "value": "{{userId}}",
                   "description": "ID del usuario (UUID)"
                 }
               ]
@@ -372,12 +509,101 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "uuid-del-usuario",
+                  "value": "{{userId}}",
                   "description": "ID del usuario (UUID)"
                 }
               ]
             },
             "description": "Eliminar un usuario (soft delete)"
+          },
+          "response": []
+        },
+        {
+          "name": "⭐ Actualizar Usuario Completo (TODO-EN-UNO)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan Actualizado\",\n  \"lastName\": \"Pérez Actualizado\",\n  \"email\": \"usuario-actualizado@empresa.com\",\n  \"isActive\": true,\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/{{userId}}/completo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", "{{userId}}", "completo"]
+            },
+            "description": "⭐ **Endpoint TODO-EN-UNO** para formularios de edición.\n\n**UNA sola llamada actualiza:**\n✅ Datos básicos (nombre, apellido, email, etc)\n✅ Rol principal del usuario\n✅ Sucursales disponibles\n\n**Uso típico**: Formulario de edición de usuarios.\n\n**Ventaja**: Frontend hace 1 sola llamada en lugar de 3.\n\n**Campos opcionales**: Envía solo lo que necesitas actualizar."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver Roles del Usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/{{userId}}/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", "{{userId}}", "roles"]
+            },
+            "description": "Obtener la lista de roles asignados a un usuario.\n\n**Response incluye:**\n- ID y nombre del rol\n- Fecha de asignación\n- Estado activo\n\n**Requiere permiso:** users.view"
+          },
+          "response": []
+        },
+        {
+          "name": "Ver Sucursales del Usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es"
+              },
+              {
+                "key": "company-code",
+                "value": "MNK"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/usuarios/{{userId}}/sucursales",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "usuarios", "{{userId}}", "sucursales"]
+            },
+            "description": "Obtener las sucursales disponibles para un usuario.\n\n**Response incluye:**\n- Sucursal actual (currentBranchId)\n- Lista de sucursales disponibles\n\n**Requiere permiso:** users.view"
           },
           "response": []
         }
@@ -501,7 +727,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"companyId\": \"uuid-de-empresa\",\n  \"name\": \"editor\",\n  \"displayName\": \"Editor\",\n  \"description\": \"Rol de editor con permisos limitados\",\n  \"isActive\": true,\n  \"isSystem\": false\n}"
+              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"name\": \"editor\",\n  \"displayName\": \"Editor\",\n  \"description\": \"Rol de editor con permisos limitados\",\n  \"isActive\": true,\n  \"isSystem\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/roles",
@@ -827,62 +1053,7 @@
             },
             "description": "Obtener menú privado según permisos del usuario autenticado\n\n**Comportamiento:**\n- **Requiere token JWT válido** (autenticación obligatoria)\n- **Obtiene el userId del token** automáticamente\n- **Combina permisos de todos los roles activos** del usuario\n- Devuelve solo items privados según permisos del usuario\n- Los items públicos son manejados por el frontend\n\n**Respuesta:**\n- Si el usuario tiene permisos: devuelve array de items del menú\n- Si el usuario no tiene permisos: devuelve array vacío con alerta en `details`\n\n**Nota:** Ya no se requiere el parámetro `roleId` en la URL. El sistema obtiene automáticamente los permisos del usuario desde su token."
           },
-          "response": [
-            {
-              "name": "Menú con permisos",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}"
-                  },
-                  {
-                    "key": "Accept-Language",
-                    "value": "es"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/seguridades/menu",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "seguridades", "menu"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"data\": [\n    {\n      \"id\": \"explore\",\n      \"label\": \"Explorar\",\n      \"route\": \"/main/explore\"\n    },\n    {\n      \"id\": \"products\",\n      \"label\": \"Productos\",\n      \"columns\": [\n        {\n          \"title\": \"Productos\",\n          \"items\": [\n            {\n              \"id\": \"network-security\",\n              \"label\": \"Network Security\",\n              \"route\": \"/products/network-security\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"id\": \"loans\",\n      \"label\": \"Préstamos\",\n      \"submenu\": [\n        {\n          \"id\": \"multicredit\",\n          \"label\": \"Multicrédito\",\n          \"description\": \"Préstamo multicrédito\",\n          \"route\": \"/loans/multicredit\"\n        }\n      ]\n    }\n  ],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
-            },
-            {
-              "name": "Usuario sin permisos (alerta)",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}"
-                  },
-                  {
-                    "key": "Accept-Language",
-                    "value": "es"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/seguridades/menu",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "seguridades", "menu"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"data\": [],\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n    \"details\": {\n      \"alert\": true,\n      \"userId\": \"uuid-del-usuario\",\n      \"message\": \"El usuario no tiene permisos asignados. Debe configurar roles y permisos en el sistema de administración.\",\n      \"permissionsCount\": 0\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "Validar acceso puntual",
@@ -917,74 +1088,397 @@
             },
             "description": "Valida si el usuario autenticado puede acceder a la ruta especificada. Devuelve 200 cuando tiene permiso y 403 cuando no está autorizado."
           },
-          "response": [
-            {
-              "name": "Acceso permitido",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}"
-                  },
-                  {
-                    "key": "Accept-Language",
-                    "value": "es"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/seguridades/access?route=/security/users",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "seguridades", "access"],
-                  "query": [
-                    {
-                      "key": "route",
-                      "value": "/security/users"
-                    }
-                  ]
-                }
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔐 ADMIN - Empresas (Con Permisos)",
+      "description": "Endpoints administrativos para gestionar empresas. Requiere permisos específicos.",
+      "item": [
+        {
+          "name": "Listar Todas las Empresas (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
               },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"data\": {\n    \"route\": \"/security/users\",\n    \"access\": true\n  },\n  \"result\": {\n    \"statusCode\": 200,\n    \"description\": \"Operación exitosa\",\n    \"details\": null\n  }\n}"
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/empresas?page=1&limit=10&search=&isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "empresas"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Elementos por página"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Búsqueda global (código, nombre, email)"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filtrar por estado activo"
+                },
+                {
+                  "key": "code",
+                  "value": "",
+                  "description": "Filtro específico por código",
+                  "disabled": true
+                },
+                {
+                  "key": "name",
+                  "value": "",
+                  "description": "Filtro específico por nombre",
+                  "disabled": true
+                }
+              ]
             },
-            {
-              "name": "Acceso denegado",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}"
-                  },
-                  {
-                    "key": "Accept-Language",
-                    "value": "es"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/seguridades/access?route=/security/roles",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "seguridades", "access"],
-                  "query": [
-                    {
-                      "key": "route",
-                      "value": "/security/roles"
-                    }
-                  ]
-                }
+            "description": "⚠️ **Requiere permiso: companies.view**\n\nListar TODAS las empresas del sistema (vista administrativa)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver Empresa por ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
               },
-              "status": "Forbidden",
-              "code": 403,
-              "_postman_previewlanguage": "json",
-              "header": [],
-              "cookie": [],
-              "body": "{\n  \"data\": null,\n  \"result\": {\n    \"statusCode\": 403,\n    \"description\": \"No tienes permisos suficientes para acceder a este recurso\",\n    \"details\": {\n      \"route\": \"/security/roles\"\n    }\n  }\n}"
-            }
-          ]
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/empresas/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "empresas", "{{companyId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: companies.view**\n\nVer cualquier empresa del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Empresa (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"NEWCOMP\",\n  \"name\": \"Nueva Empresa S.A.\",\n  \"description\": \"Empresa de servicios tecnológicos\",\n  \"email\": \"contacto@nuevaempresa.com\",\n  \"phone\": \"+593987654321\",\n  \"address\": {\n    \"street\": \"Av. Principal 123\",\n    \"city\": \"Quito\",\n    \"country\": \"Ecuador\"\n  },\n  \"settings\": {\n    \"timezone\": \"America/Guayaquil\",\n    \"currency\": \"USD\"\n  },\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/empresas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "empresas"]
+            },
+            "description": "⚠️ **Requiere permiso: companies.create**\n\nCrear nueva empresa en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Empresa (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Empresa Actualizada S.A.\",\n  \"email\": \"nuevo-contacto@empresa.com\",\n  \"description\": \"Descripción actualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/empresas/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "empresas", "{{companyId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: companies.edit**\n\nActualizar cualquier empresa del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Empresa (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/empresas/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "empresas", "{{companyId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: companies.delete**\n\nEliminar empresa (soft delete - marca como inactiva)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔐 ADMIN - Sucursales (Con Permisos)",
+      "description": "Endpoints administrativos para gestionar sucursales. Requiere permisos específicos.",
+      "item": [
+        {
+          "name": "Listar Todas las Sucursales (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales?page=1&limit=10&companyId=&search=&isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Elementos por página"
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "description": "UUID de la empresa (opcional)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Búsqueda global (código, nombre)"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filtrar por estado activo"
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Tipo: headquarters, branch, warehouse, store",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "⚠️ **Requiere permiso: branches.view**\n\nListar TODAS las sucursales del sistema (vista administrativa)."
+          },
+          "response": []
+        },
+        {
+          "name": "Sucursales de Empresa (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales/empresa/{{companyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales", "empresa", "{{companyId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: branches.view**\n\nVer todas las sucursales de cualquier empresa (vista administrativa)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver Sucursal por ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales/{{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales", "{{branchId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: branches.view**\n\nVer cualquier sucursal del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Sucursal (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"code\": \"NEWSUC\",\n  \"name\": \"Nueva Sucursal\",\n  \"type\": \"branch\",\n  \"address\": {\n    \"street\": \"Av. Central 456\",\n    \"city\": \"Guayaquil\",\n    \"country\": \"Ecuador\"\n  },\n  \"contactInfo\": {\n    \"phone\": \"0987654321\",\n    \"email\": \"sucursal@empresa.com\"\n  },\n  \"settings\": {\n    \"openHours\": \"08:00-18:00\",\n    \"maxCapacity\": 100\n  },\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales"]
+            },
+            "description": "⚠️ **Requiere permiso: branches.create**\n\nCrear nueva sucursal en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Sucursal (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sucursal Actualizada\",\n  \"type\": \"headquarters\",\n  \"contactInfo\": {\n    \"phone\": \"0999999999\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales/{{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales", "{{branchId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: branches.edit**\n\nActualizar cualquier sucursal del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Sucursal (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/admin/sucursales/{{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "admin", "sucursales", "{{branchId}}"]
+            },
+            "description": "⚠️ **Requiere permiso: branches.delete**\n\nEliminar sucursal (soft delete - marca como inactiva)."
+          },
+          "response": []
         }
       ]
     }
@@ -1007,6 +1501,21 @@
     },
     {
       "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "roleId",
       "value": "",
       "type": "string"
     }
