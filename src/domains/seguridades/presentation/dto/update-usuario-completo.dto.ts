@@ -42,6 +42,11 @@ export class UpdateUsuarioCompletoDto {
   @IsString()
   lastName?: string;
 
+  @ApiProperty({ description: 'Teléfono del usuario', example: '+593987654321', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
   @ApiProperty({ description: 'ID de la empresa', example: 'uuid-de-empresa', required: false })
   @IsOptional()
   @IsUUID('4', { message: 'El ID de empresa debe ser un UUID válido' })

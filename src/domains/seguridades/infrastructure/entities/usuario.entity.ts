@@ -32,6 +32,9 @@ export class UsuarioEntity {
   @Column()
   lastName: string;
 
+  @Column({ nullable: true })
+  phone: string;
+
   @Column({ name: 'company_id' })
   companyId: string;
 

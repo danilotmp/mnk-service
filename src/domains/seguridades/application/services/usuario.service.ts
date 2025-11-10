@@ -316,6 +316,7 @@ export class UsuarioService {
 
     if (updateDto.firstName) usuario.firstName = updateDto.firstName;
     if (updateDto.lastName) usuario.lastName = updateDto.lastName;
+    if (updateDto.phone !== undefined) usuario.phone = updateDto.phone;
     if (updateDto.companyId) usuario.companyId = updateDto.companyId;
     if (updateDto.isActive !== undefined) usuario.isActive = updateDto.isActive;
 

@@ -70,6 +70,7 @@ PUT /api/seguridades/usuarios/:id/completo
   "password"?: string;           // Nueva contraseña (opcional)
   "firstName"?: string;          // Nombre
   "lastName"?: string;           // Apellido
+  "phone"?: string;              // Teléfono del usuario
   "companyId"?: string;          // ID de la empresa (UUID)
   "isActive"?: boolean;          // Estado activo/inactivo
   
@@ -137,6 +138,7 @@ const updateUserComplete = async (userId: string, data: {
   firstName?: string;
   lastName?: string;
   email?: string;
+  phone?: string;
   isActive?: boolean;
   roleId?: string;
   branchIds?: string[];
@@ -180,6 +182,7 @@ const UserEditForm = ({ userId, onSuccess }: Props) => {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     isActive: true,
     roleId: '',
     branchIds: [],
@@ -218,6 +221,13 @@ const UserEditForm = ({ userId, onSuccess }: Props) => {
         value={formData.lastName}
         onChangeText={(text) => setFormData({...formData, lastName: text})}
         placeholder="Apellido"
+      />
+      
+      <TextInput
+        value={formData.phone}
+        onChangeText={(text) => setFormData({...formData, phone: text})}
+        placeholder="Teléfono"
+        keyboardType="phone-pad"
       />
       
       {/* Selector de Rol */}
@@ -269,6 +279,7 @@ await fetch(`/api/seguridades/usuarios/${userId}/completo`, {
   body: JSON.stringify({
     firstName: 'Juan',
     lastName: 'Pérez',
+    phone: '+593987654321',       // ✅ Aceptado
     roleId: selectedRoleId,       // ✅ Aceptado
     branchIds: selectedBranches,  // ✅ Aceptado
   })
@@ -403,6 +414,7 @@ await updateUserComplete(userId, {
   firstName: "Juan",
   lastName: "Pérez",
   email: "juan.nuevo@empresa.com",
+  phone: "+593987654321",
   isActive: true,
   roleId: newRoleId,
   branchIds: [branch1, branch2]
@@ -564,6 +576,7 @@ const handleSubmit = async () => {
 - ✅ Una sola llamada actualiza todo
 - ✅ Validaciones automáticas del backend
 - ✅ Documentado en Swagger y Postman
+- ✅ **NUEVO**: Campo `phone` disponible en todos los endpoints de usuario
 
 ### Lo que NO cambió:
 - ✅ El endpoint básico `/usuarios/:id` sigue funcionando (solo datos básicos)
@@ -573,7 +586,17 @@ const handleSubmit = async () => {
 ### Para el frontend:
 - 🔧 Cambiar URL de `/usuarios/:id` a `/usuarios/:id/completo`
 - 🔧 Ya NO quitar `roleId` ni `branchIds` del payload
+- ✅ Puedes enviar el campo `phone` (opcional)
 - ✅ Todo lo demás sigue igual
+
+### 📱 Campo Phone
+El campo `phone` está disponible en:
+- ✅ Registro de usuario (`POST /api/seguridades/register`)
+- ✅ Creación de usuario (`POST /api/seguridades/usuarios`)
+- ✅ Actualización básica (`PUT /api/seguridades/usuarios/:id`)
+- ✅ Actualización completa (`PUT /api/seguridades/usuarios/:id/completo`)
+- ✅ Es **opcional** en todos los endpoints
+- ✅ Se almacena en la base de datos automáticamente
 
 ---
 

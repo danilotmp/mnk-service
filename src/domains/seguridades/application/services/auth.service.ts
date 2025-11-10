@@ -153,6 +153,7 @@ export class AuthService {
       password: hashedPassword,
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
+      phone: registerDto.phone,
       companyId: registerDto.companyId,
       isActive: true,
       createdAt: new Date(),

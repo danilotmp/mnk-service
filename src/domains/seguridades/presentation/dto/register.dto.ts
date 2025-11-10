@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MinLength, IsUUID } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, IsUUID, IsOptional } from 'class-validator';
 
 /**
  * DTO para registro de usuario
@@ -35,6 +35,14 @@ export class RegisterDto {
   })
   @IsNotEmpty()
   lastName: string;
+
+  @ApiProperty({
+    description: 'Teléfono del usuario',
+    example: '+593987654321',
+    required: false,
+  })
+  @IsOptional()
+  phone?: string;
 
   @ApiProperty({
     description: 'ID de la empresa',
