@@ -70,7 +70,13 @@ export class UserRoleRepository {
    * Crear una asignación de rol
    */
   async create(data: Partial<UserRoleEntity>): Promise<UserRoleEntity> {
-    const userRole = this.repository.create(data);
+    // Crear la entidad explícitamente con los campos requeridos
+    const userRole = this.repository.create({
+      userId: data.userId,
+      roleId: data.roleId,
+      branchId: data.branchId || null,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+    });
     return this.repository.save(userRole);
   }
 

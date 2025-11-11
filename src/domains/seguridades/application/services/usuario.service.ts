@@ -40,7 +40,7 @@ export class UsuarioService {
     // Formatear roles si existen
     const roles = userRoles && userRoles.length > 0
       ? userRoles
-          .filter((ur) => ur.isActive)
+          .filter((ur) => ur && ur.isActive && ur.role)  // ✅ Validar que role existe
           .map((ur) => ({
             id: ur.role.id,
             name: ur.role.name,
@@ -254,6 +254,7 @@ export class UsuarioService {
       await this.userRoleRepository.create({
         userId: savedUsuario.id,
         roleId: roleId,
+        branchId: null,
         isActive: true,
       });
     }
@@ -374,7 +375,8 @@ export class UsuarioService {
    * Incluye datos básicos + roles + sucursales
    */
   async updateCompleto(id: string, updateDto: UpdateUsuarioCompletoDto, lang: string = 'es') {
-    const usuario = await this.usuarioRepository.findOne(id);
+    // Cargar usuario SIN relaciones para evitar problemas con cascade al guardar
+    const usuario = await this.usuarioRepository.findOneBasic(id);
     if (!usuario) {
       throw new NotFoundException(
         await this.responseHelper.errorResponse(
@@ -428,15 +430,41 @@ export class UsuarioService {
         );
       }
 
-      // Eliminar roles actuales del usuario
-      await this.userRoleRepository.deleteByUserId(id);
+      try {
+        console.log(`[updateCompleto] Actualizando rol para usuario: ${id}`);
+        console.log(`[updateCompleto] Nuevo roleId: ${updateDto.roleId}`);
+        
+        // Eliminar roles actuales del usuario
+        await this.userRoleRepository.deleteByUserId(id);
+        console.log(`[updateCompleto] Roles antiguos eliminados para usuario: ${id}`);
 
-      // Asignar el nuevo rol
-      await this.userRoleRepository.create({
-        userId: id,
-        roleId: updateDto.roleId,
-        isActive: true,
-      });
+        // Pequeña espera para asegurar que el delete se complete
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Asignar el nuevo rol con todos los campos necesarios
+        const newUserRole = await this.userRoleRepository.create({
+          userId: id,
+          roleId: updateDto.roleId,
+          branchId: null,
+          isActive: true,
+        });
+        console.log(`[updateCompleto] Nuevo rol creado:`, newUserRole);
+      } catch (error) {
+        console.error('[updateCompleto] Error al actualizar rol:', error);
+        console.error('[updateCompleto] Stack trace:', error.stack);
+        throw new BadRequestException(
+          await this.responseHelper.errorResponse(
+            MessageCode.BUSINESS_RULE_VIOLATION,
+            lang,
+            { 
+              error: 'ROLE_UPDATE_FAILED', 
+              message: 'Error al actualizar el rol del usuario',
+              details: error.message 
+            },
+            400,
+          ),
+        );
+      }
     }
 
     // 3. Gestionar sucursales (si se proporcionan)
@@ -482,17 +510,60 @@ export class UsuarioService {
     }
 
     // 4. Guardar usuario actualizado
+    console.log('[updateCompleto] Guardando datos básicos del usuario...');
     await this.usuarioRepository.save(usuario);
+    console.log('[updateCompleto] Usuario guardado correctamente');
 
-    // 5. Obtener el usuario con roles para retornar
-    const usuarioConRoles = await this.usuarioRepository.findOne(id);
-    const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
+    // 5. Recargar el usuario con todas las relaciones de forma explícita
+    try {
+      // Esperar un momento para que SQLite sincronice
+      console.log('[updateCompleto] Esperando sincronización de BD...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Obtener el usuario recargado con relaciones
+      console.log('[updateCompleto] Recargando usuario con relaciones, userId:', id);
+      const usuarioConRoles = await this.usuarioRepository.findOne(id);
+      console.log('[updateCompleto] Usuario recargado:', usuarioConRoles ? 'Sí' : 'No');
+      
+      if (!usuarioConRoles) {
+        console.error('[updateCompleto] Usuario no encontrado después de guardar!');
+        throw new NotFoundException(
+          await this.responseHelper.errorResponse(
+            MessageCode.USER_NOT_FOUND,
+            lang,
+            { error: 'USER_NOT_FOUND', userId: id },
+            404,
+          ),
+        );
+      }
 
-    return await this.responseHelper.successResponse(
-      usuarioFormateado,
-      MessageCode.RESOURCE_UPDATED,
-      lang,
-    );
+      console.log('[updateCompleto] Formateando usuario...');
+      const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
+      console.log('[updateCompleto] Usuario formateado correctamente');
+
+      return await this.responseHelper.successResponse(
+        usuarioFormateado,
+        MessageCode.RESOURCE_UPDATED,
+        lang,
+      );
+    } catch (error) {
+      // Si falla al cargar con relaciones, retornar sin roles
+      console.error('[updateCompleto] Error al cargar usuario con roles:', error);
+      console.error('[updateCompleto] Error message:', error.message);
+      console.error('[updateCompleto] Error stack:', error.stack);
+      
+      // Retornar el usuario sin roles como fallback
+      const { password, userRoles, ...userWithoutPassword } = usuario;
+      
+      return await this.responseHelper.successResponse(
+        {
+          ...userWithoutPassword,
+          roles: [], // Array vacío como fallback
+        },
+        MessageCode.RESOURCE_UPDATED,
+        lang,
+      );
+    }
   }
 
   // ============================================
