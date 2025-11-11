@@ -31,6 +31,32 @@ export class UsuarioService {
   ) {}
 
   /**
+   * Formatear usuario con roles
+   * Método helper privado para dar formato consistente
+   */
+  private formatUserWithRoles(usuario: any) {
+    const { password, userRoles, ...userWithoutPassword } = usuario;
+    
+    // Formatear roles si existen
+    const roles = userRoles && userRoles.length > 0
+      ? userRoles
+          .filter((ur) => ur.isActive)
+          .map((ur) => ({
+            id: ur.role.id,
+            name: ur.role.name,
+            displayName: ur.role.displayName,
+            description: ur.role.description,
+            assignedAt: ur.createdAt,
+          }))
+      : [];
+
+    return {
+      ...userWithoutPassword,
+      roles,
+    };
+  }
+
+  /**
    * Obtener perfil del usuario autenticado
    */
   async getProfile(userId: string, lang: string = 'es') {
@@ -109,14 +135,11 @@ export class UsuarioService {
       ? await this.usuarioRepository.searchWithPagination(skip, limit, filters)
       : await this.usuarioRepository.findWithPagination(skip, limit);
 
-    // Retornar sin contraseñas
-    const usuariosSinPassword = usuarios.map((usuario) => {
-      const { password, ...userWithoutPassword } = usuario;
-      return userWithoutPassword;
-    });
+    // Formatear usuarios con roles
+    const usuariosFormateados = usuarios.map((usuario) => this.formatUserWithRoles(usuario));
 
     const paginatedResponse = PaginationHelper.createPaginatedResponse(
-      usuariosSinPassword,
+      usuariosFormateados,
       total,
       page,
       limit,
@@ -141,18 +164,18 @@ export class UsuarioService {
       );
     }
 
-    // Retornar sin la contraseña
-    const { password, ...userWithoutPassword } = usuario;
+    // Formatear usuario con roles
+    const usuarioFormateado = this.formatUserWithRoles(usuario);
 
     return await this.responseHelper.successResponse(
-      userWithoutPassword,
+      usuarioFormateado,
       MessageCode.SUCCESS,
       lang,
     );
   }
 
   /**
-   * Crear un nuevo usuario
+   * Crear un nuevo usuario (con soporte para rol y sucursales)
    */
   async create(createUsuarioDto: CreateUsuarioDto, lang: string = 'es') {
     // Verificar que el email no exista
@@ -168,23 +191,93 @@ export class UsuarioService {
       );
     }
 
-    // Hashear la contraseña
-    const hashedPassword = await bcrypt.hash(createUsuarioDto.password, 10);
+    // Extraer roleId y branchIds del DTO
+    const { roleId, branchIds, ...usuarioData } = createUsuarioDto;
 
-    // Crear el usuario
+    // Validar rol si se proporciona
+    if (roleId) {
+      const roleResponse = await this.roleService.findOne(roleId, lang);
+      if (!roleResponse.data) {
+        throw new BadRequestException(
+          await this.responseHelper.errorResponse(
+            MessageCode.ROLE_NOT_FOUND,
+            lang,
+            { error: 'ROLE_NOT_FOUND', roleId },
+            404,
+          ),
+        );
+      }
+    }
+
+    // Validar sucursales si se proporcionan
+    if (branchIds && branchIds.length > 0) {
+      for (const branchId of branchIds) {
+        const branch = await this.branchRepository.findOne(branchId);
+        if (!branch) {
+          throw new BadRequestException(
+            await this.responseHelper.errorResponse(
+              MessageCode.BRANCH_NOT_FOUND,
+              lang,
+              { error: 'BRANCH_NOT_FOUND', branchId },
+              404,
+            ),
+          );
+        }
+        // Verificar que la sucursal pertenece a la empresa del usuario
+        if (branch.companyId !== createUsuarioDto.companyId) {
+          throw new BadRequestException(
+            await this.responseHelper.errorResponse(
+              MessageCode.BUSINESS_RULE_VIOLATION,
+              lang,
+              { error: 'BRANCH_NOT_IN_COMPANY', branchId, companyId: createUsuarioDto.companyId },
+              400,
+            ),
+          );
+        }
+      }
+    }
+
+    // Hashear la contraseña
+    const hashedPassword = await bcrypt.hash(usuarioData.password, 10);
+
+    // Crear el usuario con datos básicos
     const usuario = this.usuarioRepository.create({
-      ...createUsuarioDto,
+      ...usuarioData,
       password: hashedPassword,
-      isActive: createUsuarioDto.isActive !== undefined ? createUsuarioDto.isActive : true,
+      isActive: usuarioData.isActive !== undefined ? usuarioData.isActive : true,
     });
 
     const savedUsuario = await this.usuarioRepository.save(usuario);
 
-    // Retornar sin la contraseña
-    const { password, ...userWithoutPassword } = savedUsuario;
+    // Asignar rol si se proporciona
+    if (roleId) {
+      await this.userRoleRepository.create({
+        userId: savedUsuario.id,
+        roleId: roleId,
+        isActive: true,
+      });
+    }
+
+    // Asignar sucursales si se proporcionan
+    if (branchIds && branchIds.length > 0) {
+      const branches = await Promise.all(
+        branchIds.map(id => this.branchRepository.findOne(id))
+      );
+      savedUsuario.availableBranches = branches.map(b => ({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+      }));
+      savedUsuario.currentBranchId = branchIds[0];
+      await this.usuarioRepository.save(savedUsuario);
+    }
+
+    // Obtener el usuario con roles para retornar
+    const usuarioConRoles = await this.usuarioRepository.findOne(savedUsuario.id);
+    const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
 
     return await this.responseHelper.successResponse(
-      userWithoutPassword,
+      usuarioFormateado,
       MessageCode.USER_CREATED,
       lang,
       201,
@@ -389,13 +482,14 @@ export class UsuarioService {
     }
 
     // 4. Guardar usuario actualizado
-    const updatedUsuario = await this.usuarioRepository.save(usuario);
+    await this.usuarioRepository.save(usuario);
 
-    // 5. Retornar sin la contraseña
-    const { password, ...userWithoutPassword } = updatedUsuario;
+    // 5. Obtener el usuario con roles para retornar
+    const usuarioConRoles = await this.usuarioRepository.findOne(id);
+    const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
 
     return await this.responseHelper.successResponse(
-      userWithoutPassword,
+      usuarioFormateado,
       MessageCode.RESOURCE_UPDATED,
       lang,
     );

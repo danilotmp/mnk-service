@@ -19,7 +19,10 @@ export class UsuarioRepository {
   }
 
   async findOne(id: string): Promise<UsuarioEntity | null> {
-    return this.repository.findOne({ where: { id } });
+    return this.repository.findOne({
+      where: { id },
+      relations: ['userRoles', 'userRoles.role'],
+    });
   }
 
   async save(usuario: Partial<UsuarioEntity>): Promise<UsuarioEntity> {
@@ -42,6 +45,7 @@ export class UsuarioRepository {
       skip,
       take,
       order: { createdAt: 'DESC' },
+      relations: ['userRoles', 'userRoles.role'],
     });
   }
 
@@ -61,6 +65,10 @@ export class UsuarioRepository {
     },
   ): Promise<[UsuarioEntity[], number]> {
     const queryBuilder = this.repository.createQueryBuilder('usuario');
+
+    // Cargar relaciones de roles
+    queryBuilder.leftJoinAndSelect('usuario.userRoles', 'userRoles');
+    queryBuilder.leftJoinAndSelect('userRoles.role', 'role');
 
     // Filtro por companyId
     if (filters?.companyId) {

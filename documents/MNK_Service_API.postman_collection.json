@@ -431,14 +431,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"companyId\": \"{{companyId}}\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"phone\": \"+593987654321\",\n  \"companyId\": \"{{companyId}}\",\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"],\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/usuarios",
               "host": ["{{baseUrl}}"],
               "path": ["api", "seguridades", "usuarios"]
             },
-            "description": "Crear un nuevo usuario"
+            "description": "Crear un nuevo usuario con rol y sucursales\n\n✅ **MEJORADO**: Ahora acepta roleId y branchIds\n\n**Campos opcionales:**\n- phone: Teléfono del usuario\n- roleId: ID del rol a asignar\n- branchIds: Array de IDs de sucursales\n- isActive: Estado del usuario (default: true)\n\n**Response incluye:**\n- Datos del usuario\n- Roles asignados\n- Sucursales disponibles"
           },
           "response": []
         },
@@ -542,14 +542,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Juan Actualizado\",\n  \"lastName\": \"Pérez Actualizado\",\n  \"email\": \"usuario-actualizado@empresa.com\",\n  \"isActive\": true,\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"]\n}"
+              "raw": "{\n  \"firstName\": \"Juan Actualizado\",\n  \"lastName\": \"Pérez Actualizado\",\n  \"phone\": \"+593987654321\",\n  \"email\": \"usuario-actualizado@empresa.com\",\n  \"isActive\": true,\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/usuarios/{{userId}}/completo",
               "host": ["{{baseUrl}}"],
               "path": ["api", "seguridades", "usuarios", "{{userId}}", "completo"]
             },
-            "description": "⭐ **Endpoint TODO-EN-UNO** para formularios de edición.\n\n**UNA sola llamada actualiza:**\n✅ Datos básicos (nombre, apellido, email, etc)\n✅ Rol principal del usuario\n✅ Sucursales disponibles\n\n**Uso típico**: Formulario de edición de usuarios.\n\n**Ventaja**: Frontend hace 1 sola llamada en lugar de 3.\n\n**Campos opcionales**: Envía solo lo que necesitas actualizar."
+            "description": "⭐ **Endpoint TODO-EN-UNO** para formularios de edición.\n\n**UNA sola llamada actualiza:**\n✅ Datos básicos (nombre, apellido, email, teléfono, etc)\n✅ Rol principal del usuario\n✅ Sucursales disponibles\n\n**Uso típico**: Formulario de edición de usuarios.\n\n**Ventaja**: Frontend hace 1 sola llamada en lugar de 3.\n\n**Campos opcionales**: Envía solo lo que necesitas actualizar.\n\n**Response mejorado**: Ahora incluye roles asignados"
           },
           "response": []
         },

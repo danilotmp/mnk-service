@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsUUID,
   IsBoolean,
+  IsArray,
 } from 'class-validator';
 
 /**
@@ -48,4 +49,24 @@ export class CreateUsuarioDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({
+    description: 'ID del rol principal a asignar al usuario',
+    example: 'uuid-del-rol',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'El roleId debe ser un UUID válido' })
+  roleId?: string;
+
+  @ApiProperty({
+    description: 'Array de IDs de sucursales a las que el usuario tiene acceso',
+    example: ['uuid-sucursal-1', 'uuid-sucursal-2'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray({ message: 'branchIds debe ser un array' })
+  @IsUUID('4', { each: true, message: 'Cada branchId debe ser un UUID válido' })
+  branchIds?: string[];
 }
