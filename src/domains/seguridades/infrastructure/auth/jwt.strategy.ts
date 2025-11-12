@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsuarioRepository } from '../repositories/usuario.repository';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Estrategia JWT para Passport
@@ -24,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const usuario = await this.usuarioRepository.findOne(payload.sub);
 
-    if (!usuario || !usuario.isActive) {
+    if (!usuario || usuario.status !== RecordStatus.ACTIVE) {
       throw new UnauthorizedException('Token inválido o usuario inactivo');
     }
 

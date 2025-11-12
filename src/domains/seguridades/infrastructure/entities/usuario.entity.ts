@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 import { UserRoleEntity } from './user-role.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Usuario
@@ -42,8 +43,8 @@ export class UsuarioEntity {
   @JoinColumn({ name: 'company_id' })
   company: CompanyEntity;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @Column({ type: 'datetime', nullable: true })
   lastLogin: Date;

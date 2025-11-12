@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PermissionEntity, PermissionType } from '../entities/permission.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repositorio para la entidad Permission
@@ -15,14 +16,14 @@ export class PermissionRepository {
 
   findAll(): Promise<PermissionEntity[]> {
     return this.repository.find({
-      where: { isActive: true },
+      where: { status: RecordStatus.ACTIVE },
       order: { code: 'ASC' },
     });
   }
 
   findByType(type: PermissionType): Promise<PermissionEntity[]> {
     return this.repository.find({
-      where: { type, isActive: true },
+      where: { type, status: RecordStatus.ACTIVE },
       order: { code: 'ASC' },
     });
   }
@@ -37,7 +38,7 @@ export class PermissionRepository {
   ): Promise<[PermissionEntity[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('permission')
-      .where('permission.isActive = :isActive', { isActive: true });
+      .where('permission.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
 
     if (type) {
       queryBuilder.andWhere('permission.type = :type', { type });
@@ -57,16 +58,17 @@ export class PermissionRepository {
     take: number,
     filters?: {
       type?: PermissionType;
-      isActive?: boolean;
+      status?: number;
       searchTerm?: string;
     },
   ): Promise<[PermissionEntity[], number]> {
     const queryBuilder = this.repository.createQueryBuilder('permission');
 
-    if (filters?.isActive !== undefined) {
-      queryBuilder.where('permission.isActive = :isActive', { isActive: filters.isActive });
+    if (filters?.status !== undefined) {
+      queryBuilder.where('permission.status = :status', { status: filters.status });
     } else {
-      queryBuilder.where('permission.isActive = :isActive', { isActive: true });
+      // Por defecto, excluir eliminados
+      queryBuilder.where('permission.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
     }
 
     if (filters?.type) {
@@ -91,20 +93,20 @@ export class PermissionRepository {
   }
 
   findByCode(code: string): Promise<PermissionEntity | null> {
-    return this.repository.findOne({ where: { code, isActive: true } });
+    return this.repository.findOne({ where: { code, status: RecordStatus.ACTIVE } });
   }
 
   findByRoute(route: string): Promise<PermissionEntity | null> {
-    return this.repository.findOne({ where: { route, isActive: true } });
+    return this.repository.findOne({ where: { route, status: RecordStatus.ACTIVE } });
   }
 
   findByMenuId(menuId: string): Promise<PermissionEntity | null> {
-    return this.repository.findOne({ where: { menuId, isActive: true } });
+    return this.repository.findOne({ where: { menuId, status: RecordStatus.ACTIVE } });
   }
 
   findPublicPages(): Promise<PermissionEntity[]> {
     return this.repository.find({
-      where: { type: PermissionType.PAGE, isPublic: true, isActive: true },
+      where: { type: PermissionType.PAGE, isPublic: true, status: RecordStatus.ACTIVE },
       order: { code: 'ASC' },
     });
   }

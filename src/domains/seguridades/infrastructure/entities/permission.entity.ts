@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { RolePermissionEntity } from './role-permission.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Tipo de permiso
@@ -58,8 +59,8 @@ export class PermissionEntity {
   @Column({ default: true })
   isPublic: boolean; // Si es público (no requiere autenticación)
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @Column({ default: false })
   isSystem: boolean; // Si es un permiso del sistema (no se puede eliminar)

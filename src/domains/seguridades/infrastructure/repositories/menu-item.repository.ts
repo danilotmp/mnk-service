@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuItemEntity } from '../entities/menu-item.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repositorio para la entidad MenuItem
@@ -15,7 +16,7 @@ export class MenuItemRepository {
 
   findAll(): Promise<MenuItemEntity[]> {
     return this.repository.find({
-      where: { isActive: true },
+      where: { status: RecordStatus.ACTIVE },
       relations: ['permission'],
       order: { order: 'ASC' },
     });
@@ -23,7 +24,7 @@ export class MenuItemRepository {
 
   findPublic(): Promise<MenuItemEntity[]> {
     return this.repository.find({
-      where: { isPublic: true, isActive: true },
+      where: { isPublic: true, status: RecordStatus.ACTIVE },
       relations: ['permission'],
       order: { order: 'ASC' },
     });
@@ -31,21 +32,21 @@ export class MenuItemRepository {
 
   findByRoute(route: string): Promise<MenuItemEntity | null> {
     return this.repository.findOne({
-      where: { route, isActive: true },
+      where: { route, status: RecordStatus.ACTIVE },
       relations: ['permission', 'parent'],
     });
   }
 
   findByMenuId(menuId: string): Promise<MenuItemEntity | null> {
     return this.repository.findOne({
-      where: { menuId, isActive: true },
+      where: { menuId, status: RecordStatus.ACTIVE },
       relations: ['permission', 'parent', 'children'],
     });
   }
 
   findRootItems(): Promise<MenuItemEntity[]> {
     return this.repository.find({
-      where: { parentId: null, isActive: true },
+      where: { parentId: null, status: RecordStatus.ACTIVE },
       relations: ['permission', 'children'],
       order: { order: 'ASC' },
     });

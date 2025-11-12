@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { CompanyRepository } from '../../infrastructure/repositories/company.repository';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatusHelper } from '@/common/helpers/record-status.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { PaginationHelper } from '@/common/helpers/pagination.helper';
@@ -17,18 +19,20 @@ export class CompanyService {
   constructor(
     private companyRepository: CompanyRepository,
     private responseHelper: ResponseHelper,
+    private recordStatusHelper: RecordStatusHelper,
   ) {}
+
+  private async formatCompanyWithStatus(company: any, lang: string = 'es') {
+    return { ...company, ...(await this.recordStatusHelper.format(company.status, lang)) };
+  }
 
   /**
    * Obtener todas las empresas (sin paginación)
    */
   async findAll(lang: string = 'es') {
     const companies = await this.companyRepository.findAll();
-    return await this.responseHelper.successResponse(
-      companies,
-      MessageCode.SUCCESS,
-      lang,
-    );
+    const formatted = await Promise.all(companies.map(c => this.formatCompanyWithStatus(c, lang)));
+    return await this.responseHelper.successResponse(formatted, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -60,12 +64,8 @@ export class CompanyService {
       ? await this.companyRepository.searchWithPagination(skip, limit, filters)
       : await this.companyRepository.findWithPagination(skip, limit);
 
-    const paginatedResponse = PaginationHelper.createPaginatedResponse(
-      companies,
-      total,
-      page,
-      limit,
-    );
+    const formatted = await Promise.all(companies.map(c => this.formatCompanyWithStatus(c, lang)));
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(formatted, total, page, limit);
 
     return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
@@ -189,7 +189,7 @@ export class CompanyService {
     }
 
     // Soft delete: marcar como inactivo
-    company.isActive = false;
+    company.status = RecordStatus.DELETED;
     await this.companyRepository.save(company);
 
     return await this.responseHelper.successResponse(

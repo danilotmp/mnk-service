@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsBoolean, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsUUID } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
 /**
@@ -12,11 +12,15 @@ export class PaginatedRoleQueryDto extends PaginationDto {
   @IsUUID('4', { message: 'El ID de empresa debe ser un UUID válido' })
   companyId?: string;
 
-  @ApiProperty({ description: 'Rol activo', example: true, required: false })
+  @ApiProperty({ 
+    description: 'Estado del rol (-1: Eliminado, 0: Inactivo, 1: Activo, 2: Pendiente, 3: Suspendido)', 
+    example: 1, 
+    required: false 
+  })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean({ message: 'isActive debe ser un valor booleano' })
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsInt({ message: 'status debe ser un número entero' })
+  status?: number;
 
   @ApiProperty({
     description: 'Término de búsqueda (busca en name, displayName y description)',

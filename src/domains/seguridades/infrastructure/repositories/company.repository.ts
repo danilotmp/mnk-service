@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CompanyEntity } from '../entities/company.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repository de Company
@@ -52,7 +53,7 @@ export class CompanyRepository {
     skip: number,
     take: number,
     filters?: {
-      isActive?: boolean;
+      status?: number;
       search?: string;
       code?: string;
       name?: string;
@@ -61,9 +62,12 @@ export class CompanyRepository {
   ): Promise<[CompanyEntity[], number]> {
     const queryBuilder = this.repository.createQueryBuilder('company');
 
-    // Filtro por estado activo
-    if (filters?.isActive !== undefined) {
-      queryBuilder.andWhere('company.isActive = :isActive', { isActive: filters.isActive });
+    // Filtro por estado
+    if (filters?.status !== undefined) {
+      queryBuilder.andWhere('company.status = :status', { status: filters.status });
+    } else {
+      // Por defecto, excluir eliminados
+      queryBuilder.andWhere('company.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
     }
 
     // Búsqueda global (search busca en code, name y email)

@@ -6,6 +6,7 @@ import { PermissionEntity, PermissionType } from '../../infrastructure/entities/
 import { PermissionRepository } from '../../infrastructure/repositories/permission.repository';
 import { MenuItemRepository } from '../../infrastructure/repositories/menu-item.repository';
 import { RoleEntity } from '../../infrastructure/entities/role.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Servicio de Autorización
@@ -27,7 +28,7 @@ export class AuthorizationService {
    */
   async getUserPermissions(userId: string): Promise<PermissionEntity[]> {
     const usuario = await this.usuarioRepository.findOne({
-      where: { id: userId, isActive: true },
+      where: { id: userId },
       relations: [
         'userRoles',
         'userRoles.role',
@@ -45,11 +46,11 @@ export class AuthorizationService {
     const permissions: PermissionEntity[] = [];
 
     usuario.userRoles.forEach((userRole) => {
-      if (userRole.isActive && userRole.role.isActive) {
+      if (userRole.status === RecordStatus.ACTIVE && userRole.role.status === RecordStatus.ACTIVE) {
         userRole.role.rolePermissions.forEach((rolePermission) => {
           if (
-            rolePermission.isActive &&
-            rolePermission.permission.isActive &&
+            rolePermission.status === RecordStatus.ACTIVE &&
+            rolePermission.permission.status === RecordStatus.ACTIVE &&
             !permissionsSet.has(rolePermission.permission.id)
           ) {
             permissionsSet.add(rolePermission.permission.id);
@@ -110,7 +111,7 @@ export class AuthorizationService {
       }
     }
 
-    if (!permission || !permission.isActive) {
+    if (!permission || permission.status !== RecordStatus.ACTIVE) {
       return false;
     }
 
@@ -198,11 +199,11 @@ export class AuthorizationService {
    */
   async getRolePermissions(roleId: string): Promise<PermissionEntity[]> {
     const role = await this.roleRepository.findOne({
-      where: { id: roleId, isActive: true },
+      where: { id: roleId },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
 
-    if (!role || !role.isActive) {
+    if (!role) {
       return [];
     }
 
@@ -212,9 +213,9 @@ export class AuthorizationService {
     if (role.rolePermissions) {
       role.rolePermissions.forEach((rolePermission: any) => {
         if (
-          rolePermission.isActive &&
+          rolePermission.status === RecordStatus.ACTIVE &&
           rolePermission.permission &&
-          rolePermission.permission.isActive &&
+          rolePermission.permission.status === RecordStatus.ACTIVE &&
           !permissionsSet.has(rolePermission.permission.id)
         ) {
           permissionsSet.add(rolePermission.permission.id);

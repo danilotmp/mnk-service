@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PermissionRepository } from '../../infrastructure/repositories/permission.repository';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatusHelper } from '@/common/helpers/record-status.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreatePermissionDto } from '../../presentation/dto/create-permission.dto';
 import { UpdatePermissionDto } from '../../presentation/dto/update-permission.dto';
@@ -16,7 +18,18 @@ export class PermissionService {
   constructor(
     private permissionRepository: PermissionRepository,
     private responseHelper: ResponseHelper,
+    private recordStatusHelper: RecordStatusHelper,
   ) {}
+
+  /**
+   * Formatear permiso con statusDescription
+   */
+  private async formatPermissionWithStatus(permission: any, lang: string = 'es') {
+    return {
+      ...permission,
+      ...(await this.recordStatusHelper.format(permission.status, lang)),
+    };
+  }
 
   /**
    * Obtener todos los permisos (sin paginación - para compatibilidad)
@@ -25,7 +38,10 @@ export class PermissionService {
     const permissions = type
       ? await this.permissionRepository.findByType(type)
       : await this.permissionRepository.findAll();
-    return await this.responseHelper.successResponse(permissions, MessageCode.SUCCESS, lang);
+    const formattedPermissions = await Promise.all(
+      permissions.map((permission) => this.formatPermissionWithStatus(permission, lang))
+    );
+    return await this.responseHelper.successResponse(formattedPermissions, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -33,18 +49,22 @@ export class PermissionService {
    */
   async findPaginated(
     paginationDto: PaginationDto,
-    filters?: { type?: PermissionType; isActive?: boolean; searchTerm?: string },
+    filters?: { type?: PermissionType; status?: number; searchTerm?: string },
     lang: string = 'es',
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
     const [permissions, total] =
-      filters?.searchTerm || filters?.isActive !== undefined
+      filters?.searchTerm || filters?.status !== undefined
         ? await this.permissionRepository.searchWithPagination(skip, limit, filters)
         : await this.permissionRepository.findWithPagination(skip, limit, filters?.type);
 
+    const formattedPermissions = await Promise.all(
+      permissions.map((permission) => this.formatPermissionWithStatus(permission, lang))
+    );
+
     const paginatedResponse = PaginationHelper.createPaginatedResponse(
-      permissions,
+      formattedPermissions,
       total,
       page,
       limit,
@@ -73,7 +93,8 @@ export class PermissionService {
       );
     }
 
-    return await this.responseHelper.successResponse(permission, MessageCode.SUCCESS, lang);
+    const formattedPermission = await this.formatPermissionWithStatus(permission, lang);
+    return await this.responseHelper.successResponse(formattedPermission, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -101,15 +122,16 @@ export class PermissionService {
     const permission = this.permissionRepository.create({
       ...createPermissionDto,
       type: createPermissionDto.type || PermissionType.PAGE,
-      isActive: createPermissionDto.isActive !== undefined ? createPermissionDto.isActive : true,
+      status: RecordStatus.ACTIVE,
       isPublic: createPermissionDto.isPublic !== undefined ? createPermissionDto.isPublic : false,
       isSystem: createPermissionDto.isSystem !== undefined ? createPermissionDto.isSystem : false,
     });
 
     const savedPermission = await this.permissionRepository.save(permission);
+    const formattedPermission = await this.formatPermissionWithStatus(savedPermission, lang);
 
     return await this.responseHelper.successResponse(
-      savedPermission,
+      formattedPermission,
       MessageCode.SUCCESS,
       lang,
       201,
@@ -155,8 +177,9 @@ export class PermissionService {
     // Actualizar el permiso
     Object.assign(permission, updatePermissionDto);
     const updatedPermission = await this.permissionRepository.save(permission);
+    const formattedPermission = await this.formatPermissionWithStatus(updatedPermission, lang);
 
-    return await this.responseHelper.successResponse(updatedPermission, MessageCode.SUCCESS, lang);
+    return await this.responseHelper.successResponse(formattedPermission, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -196,7 +219,7 @@ export class PermissionService {
     }
 
     // Soft delete: marcar como inactivo
-    permission.isActive = false;
+    permission.status = RecordStatus.DELETED;
     await this.permissionRepository.save(permission);
 
     return await this.responseHelper.successResponse(

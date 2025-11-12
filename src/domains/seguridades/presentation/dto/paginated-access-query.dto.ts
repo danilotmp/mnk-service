@@ -1,6 +1,6 @@
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsUUID, IsBoolean } from 'class-validator';
+import { IsOptional, IsUUID, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PaginatedAccessQueryDto extends PaginationDto {
@@ -19,11 +19,15 @@ export class PaginatedAccessQueryDto extends PaginationDto {
   @IsUUID('4', { message: 'branchId debe ser un UUID válido' })
   branchId?: string;
 
-  @ApiProperty({ description: 'Acceso activo', example: true, required: false })
+  @ApiProperty({ 
+    description: 'Estado del acceso (-1: Eliminado, 0: Inactivo, 1: Activo, 2: Pendiente, 3: Suspendido)', 
+    example: 1, 
+    required: false 
+  })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean({ message: 'isActive debe ser un valor booleano' })
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsInt({ message: 'status debe ser un número entero' })
+  status?: number;
 }
 
 

@@ -8,6 +8,7 @@ import { PermissionEntity, PermissionType } from '../domains/seguridades/infrast
 import { UserRoleEntity } from '../domains/seguridades/infrastructure/entities/user-role.entity';
 import { RolePermissionEntity } from '../domains/seguridades/infrastructure/entities/role-permission.entity';
 import { MenuItemEntity } from '../domains/seguridades/infrastructure/entities/menu-item.entity';
+import { RecordStatus } from '../common/enums/record-status.enum';
 
 /**
  * Script de seeding para poblar la base de datos con datos de prueba
@@ -71,7 +72,7 @@ async function seed() {
             resource: perm.resource,
             action: perm.action,
             isPublic: false,
-            isActive: true,
+            status: RecordStatus.ACTIVE,
             isSystem: true,
           });
           await permissionRepository.save(permission);
@@ -86,7 +87,7 @@ async function seed() {
         const adminRole = await roleRepository.findOne({ where: { name: 'admin' } });
         if (adminRole) {
           console.log('🔒 Asignando permisos nuevos al rol admin...');
-          const allPermissions = await permissionRepository.find({ where: { isActive: true } });
+          const allPermissions = await permissionRepository.find({ where: { status: RecordStatus.ACTIVE } });
           let assignedCount = 0;
           for (const permission of allPermissions) {
             const existing = await rolePermissionRepository.findOne({ 
@@ -96,7 +97,7 @@ async function seed() {
               const rolePermission = rolePermissionRepository.create({
                 roleId: adminRole.id,
                 permissionId: permission.id,
-                isActive: true,
+                status: RecordStatus.ACTIVE,
               });
               await rolePermissionRepository.save(rolePermission);
               assignedCount++;
@@ -178,7 +179,7 @@ async function seed() {
               permission: branchesViewPerm ? { code: branchesViewPerm.code } : undefined,
             },
           ],
-          isActive: true,
+          status: RecordStatus.ACTIVE,
         });
         await menuItemRepository.save(securityMenu);
         console.log('✅ Menú de seguridad creado');
@@ -214,7 +215,7 @@ async function seed() {
         maxBranches: 10,
         maxUsers: 100,
       },
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedCompany = await companyRepository.save(company);
     console.log(`✅ Empresa creada: ${savedCompany.name} (ID: ${savedCompany.id})`);
@@ -240,10 +241,10 @@ async function seed() {
         email: 'quito@mnksolutions.com',
       },
       settings: {
-        isActive: true,
+        status: RecordStatus.ACTIVE,
         allowsRemoteWork: true,
       },
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedBranchQuito = await branchRepository.save(branchQuito);
     console.log(`✅ Sucursal creada: ${savedBranchQuito.name} (ID: ${savedBranchQuito.id})`);
@@ -266,10 +267,10 @@ async function seed() {
         email: 'guayaquil@mnksolutions.com',
       },
       settings: {
-        isActive: true,
+        status: RecordStatus.ACTIVE,
         allowsRemoteWork: true,
       },
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedBranchGuayaquil = await branchRepository.save(branchGuayaquil);
     console.log(`✅ Sucursal creada: ${savedBranchGuayaquil.name} (ID: ${savedBranchGuayaquil.id})`);
@@ -299,7 +300,7 @@ async function seed() {
         route: perm.route,
         menuId: perm.menuId,
         isPublic: perm.isPublic,
-        isActive: true,
+        status: RecordStatus.ACTIVE,
         isSystem: true,
       });
       const saved = await permissionRepository.save(permission);
@@ -349,7 +350,7 @@ async function seed() {
         resource: perm.resource,
         action: perm.action,
         isPublic: false,
-        isActive: true,
+        status: RecordStatus.ACTIVE,
         isSystem: true,
       });
       const saved = await permissionRepository.save(permission);
@@ -366,7 +367,7 @@ async function seed() {
       name: 'admin',
       displayName: 'Administrador',
       description: 'Rol de administrador con todos los permisos',
-      isActive: true,
+      status: RecordStatus.ACTIVE,
       isSystem: true,
     });
     const savedAdminRole = await roleRepository.save(adminRole);
@@ -377,7 +378,7 @@ async function seed() {
       const rolePermission = rolePermissionRepository.create({
         roleId: savedAdminRole.id,
         permissionId: permission.id,
-        isActive: true,
+        status: RecordStatus.ACTIVE,
       });
       await rolePermissionRepository.save(rolePermission);
     }
@@ -388,7 +389,7 @@ async function seed() {
       name: 'usuario',
       displayName: 'Usuario',
       description: 'Rol de usuario básico',
-      isActive: true,
+      status: RecordStatus.ACTIVE,
       isSystem: true,
     });
     const savedUserRole = await roleRepository.save(userRole);
@@ -412,7 +413,7 @@ async function seed() {
         const rolePermission = rolePermissionRepository.create({
           roleId: savedUserRole.id,
           permissionId: permission.id,
-          isActive: true,
+          status: RecordStatus.ACTIVE,
         });
         await rolePermissionRepository.save(rolePermission);
       }
@@ -440,7 +441,7 @@ async function seed() {
           branchCode: savedBranchGuayaquil.code,
         },
       ],
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedAdminUser = await usuarioRepository.save(adminUser);
     console.log(`✅ Usuario creado: ${savedAdminUser.email} (ID: ${savedAdminUser.id})`);
@@ -449,7 +450,7 @@ async function seed() {
     const adminUserRole = userRoleRepository.create({
       userId: savedAdminUser.id,
       roleId: savedAdminRole.id,
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     await userRoleRepository.save(adminUserRole);
 
@@ -468,7 +469,7 @@ async function seed() {
           branchCode: savedBranchGuayaquil.code,
         },
       ],
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedTestUser = await usuarioRepository.save(testUser);
     console.log(`✅ Usuario creado: ${savedTestUser.email} (ID: ${savedTestUser.id})`);
@@ -477,7 +478,7 @@ async function seed() {
     const testUserRole = userRoleRepository.create({
       userId: savedTestUser.id,
       roleId: savedUserRole.id,
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     await userRoleRepository.save(testUserRole);
 
@@ -620,7 +621,7 @@ async function seed() {
       isPublic: false,
       permissionId: securityPermissions.all?.id,
       description: 'Módulo de administración de seguridad',
-      isActive: true,
+      status: RecordStatus.ACTIVE,
     });
     const savedSecurityMenu = await menuItemRepository.save(securityMenuItem);
     console.log(`✅ Menú principal de seguridad creado: ${savedSecurityMenu.label}`);
@@ -710,7 +711,7 @@ async function seed() {
         permissionId: item.permissionId,
         columns: item.columns || null,
         submenu: item.submenu || null,
-        isActive: true,
+        status: RecordStatus.ACTIVE,
       });
       await menuItemRepository.save(menuItem);
     }

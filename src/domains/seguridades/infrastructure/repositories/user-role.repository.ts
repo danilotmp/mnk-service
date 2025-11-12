@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRoleEntity } from '../entities/user-role.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 interface AccessFilters {
   userId?: string;
   roleId?: string;
   branchId?: string;
-  isActive?: boolean;
+  status?: number;
 }
 
 @Injectable()
@@ -38,8 +39,8 @@ export class UserRoleRepository {
       query.andWhere('access.branchId = :branchId', { branchId: filters.branchId });
     }
 
-    if (filters?.isActive !== undefined) {
-      query.andWhere('access.isActive = :isActive', { isActive: filters.isActive });
+    if (filters?.status !== undefined) {
+      query.andWhere('access.status = :status', { status: filters.status });
     }
 
     return query.getManyAndCount();
@@ -54,7 +55,7 @@ export class UserRoleRepository {
    */
   async findByUserId(userId: string): Promise<UserRoleEntity[]> {
     return this.repository.find({
-      where: { userId, isActive: true },
+      where: { userId, status: RecordStatus.ACTIVE },
       relations: ['role'],
     });
   }
@@ -75,7 +76,7 @@ export class UserRoleRepository {
       userId: data.userId,
       roleId: data.roleId,
       branchId: data.branchId || null,
-      isActive: data.isActive !== undefined ? data.isActive : true,
+      status: data.status !== undefined ? data.status : RecordStatus.ACTIVE,
     });
     return this.repository.save(userRole);
   }

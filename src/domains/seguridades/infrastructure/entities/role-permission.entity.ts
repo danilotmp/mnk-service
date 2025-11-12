@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { RoleEntity } from './role.entity';
 import { PermissionEntity } from './permission.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Relación Rol-Permiso
@@ -25,8 +26,8 @@ export class RolePermissionEntity {
   @Column({ name: 'permission_id' })
   permissionId: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

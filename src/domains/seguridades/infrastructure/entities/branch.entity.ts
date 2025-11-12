@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { CompanyEntity } from './company.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Branch (Sucursal)
@@ -43,8 +44,8 @@ export class BranchEntity {
   @Column({ type: 'simple-json', nullable: true })
   settings: any;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

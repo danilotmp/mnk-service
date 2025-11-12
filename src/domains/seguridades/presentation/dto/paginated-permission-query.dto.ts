@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsBoolean, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsEnum } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { PermissionType } from '../../infrastructure/entities/permission.entity';
 
@@ -18,11 +18,15 @@ export class PaginatedPermissionQueryDto extends PaginationDto {
   @IsEnum(PermissionType, { message: 'El tipo de permiso debe ser PAGE o ACTION' })
   type?: PermissionType;
 
-  @ApiProperty({ description: 'Permiso activo', example: true, required: false })
+  @ApiProperty({ 
+    description: 'Estado del permiso (-1: Eliminado, 0: Inactivo, 1: Activo, 2: Pendiente, 3: Suspendido)', 
+    example: 1, 
+    required: false 
+  })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean({ message: 'isActive debe ser un valor booleano' })
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsInt({ message: 'status debe ser un número entero' })
+  status?: number;
 
   @ApiProperty({
     description: 'Término de búsqueda (busca en code, name y description)',

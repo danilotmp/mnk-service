@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { RoleEntity } from '../entities/role.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repositorio para la entidad Role
@@ -16,7 +17,7 @@ export class RoleRepository {
   findAll(companyId?: string): Promise<RoleEntity[]> {
     const query = this.repository
       .createQueryBuilder('role')
-      .where('role.isActive = :isActive', { isActive: true });
+      .where('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
 
     if (companyId) {
       query.andWhere('role.companyId = :companyId', { companyId });
@@ -35,7 +36,7 @@ export class RoleRepository {
   ): Promise<[RoleEntity[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('role')
-      .where('role.isActive = :isActive', { isActive: true });
+      .where('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
 
     if (companyId) {
       queryBuilder.andWhere('role.companyId = :companyId', { companyId });
@@ -55,7 +56,7 @@ export class RoleRepository {
     take: number,
     filters?: {
       companyId?: string;
-      isActive?: boolean;
+      status?: number;
       searchTerm?: string;
     },
   ): Promise<[RoleEntity[], number]> {
@@ -65,8 +66,11 @@ export class RoleRepository {
       queryBuilder.andWhere('role.companyId = :companyId', { companyId: filters.companyId });
     }
 
-    if (filters?.isActive !== undefined) {
-      queryBuilder.andWhere('role.isActive = :isActive', { isActive: filters.isActive });
+    if (filters?.status !== undefined) {
+      queryBuilder.andWhere('role.status = :status', { status: filters.status });
+    } else {
+      // Por defecto, excluir eliminados
+      queryBuilder.andWhere('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
     }
 
     if (filters?.searchTerm) {
@@ -74,8 +78,6 @@ export class RoleRepository {
         '(role.name LIKE :searchTerm OR role.displayName LIKE :searchTerm OR role.description LIKE :searchTerm)',
         { searchTerm: `%${filters.searchTerm}%` },
       );
-    } else {
-      queryBuilder.where('role.isActive = :isActive', { isActive: true });
     }
 
     queryBuilder.orderBy('role.createdAt', 'DESC');

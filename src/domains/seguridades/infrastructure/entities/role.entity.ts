@@ -11,6 +11,7 @@ import {
 import { CompanyEntity } from './company.entity';
 import { UserRoleEntity } from './user-role.entity';
 import { RolePermissionEntity } from './role-permission.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Rol
@@ -37,8 +38,8 @@ export class RoleEntity {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @Column({ default: false })
   isSystem: boolean; // Si es un rol del sistema (no se puede eliminar)

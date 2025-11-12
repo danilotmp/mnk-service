@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { BranchEntity } from './branch.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Company
@@ -38,8 +39,8 @@ export class CompanyEntity {
   @Column({ type: 'simple-json', nullable: true })
   subscriptionPlan: any;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

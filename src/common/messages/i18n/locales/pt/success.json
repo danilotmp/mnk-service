@@ -5,5 +5,12 @@
   "REGISTER_SUCCESS": "Registro bem-sucedido",
   "TOKEN_REFRESHED": "Token atualizado com sucesso",
   "PROFILE_UPDATED": "Perfil atualizado com sucesso",
-  "LOGOUT_SUCCESS": "Logout realizado com sucesso"
+  "LOGOUT_SUCCESS": "Logout realizado com sucesso",
+  "RESOURCE_CREATED": "Recurso criado com sucesso",
+  "RESOURCE_UPDATED": "Recurso atualizado com sucesso",
+  "RECORD_STATUS_DELETED": "Excluído",
+  "RECORD_STATUS_INACTIVE": "Inativo",
+  "RECORD_STATUS_ACTIVE": "Ativo",
+  "RECORD_STATUS_PENDING": "Pendente",
+  "RECORD_STATUS_SUSPENDED": "Suspenso"
 }

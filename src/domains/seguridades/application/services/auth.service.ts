@@ -8,6 +8,7 @@ import { LoginDto } from '../../presentation/dto/login.dto';
 import { RegisterDto } from '../../presentation/dto/register.dto';
 import { RefreshTokenDto } from '../../presentation/dto/refresh-token.dto';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import * as bcrypt from 'bcrypt';
 
@@ -63,7 +64,7 @@ export class AuthService {
     }
 
     // Validar que el usuario esté activo
-    if (!usuario.isActive) {
+    if (usuario.status !== RecordStatus.ACTIVE) {
       const errorResponse = await this.responseHelper.errorResponse(
         MessageCode.USER_INACTIVE,
         lang,
@@ -97,7 +98,7 @@ export class AuthService {
         id: company.id,
         code: company.code,
         name: company.name,
-        isActive: company.isActive,
+        status: company.status,
       } : null,
       currentBranchId: usuario.currentBranchId,
       availableBranches: branches.map(branch => ({
@@ -106,14 +107,14 @@ export class AuthService {
         name: branch.name,
         type: branch.type,
         companyId: branch.companyId,
-        isActive: branch.isActive,
+        status: branch.status,
       })),
       // Por ahora solo la empresa actual, pero preparado para multi-empresa
       availableCompanies: company ? [{
         id: company.id,
         code: company.code,
         name: company.name,
-        isActive: company.isActive,
+        status: company.status,
       }] : [],
     };
 
@@ -155,7 +156,7 @@ export class AuthService {
       lastName: registerDto.lastName,
       phone: registerDto.phone,
       companyId: registerDto.companyId,
-      isActive: true,
+      status: RecordStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -194,14 +195,14 @@ export class AuthService {
 
       // Buscar usuario
       const usuario = await this.usuarioRepository.findOne(payload.sub);
-      if (!usuario || !usuario.isActive) {
+      if (!usuario || usuario.status !== RecordStatus.ACTIVE) {
         const errorResponse = await this.responseHelper.errorResponse(
           MessageCode.TOKEN_INVALID,
           lang,
           {
             error: 'INVALID_REFRESH_TOKEN',
             userId: payload.sub,
-            isActive: usuario?.isActive || false,
+            status: usuario?.status || RecordStatus.INACTIVE,
             message: 'Refresh token validation failed or user inactive',
           },
           401,
@@ -243,7 +244,7 @@ export class AuthService {
       const payload = this.jwtService.verify(token);
       const usuario = await this.usuarioRepository.findOne(payload.sub);
       
-      if (!usuario || !usuario.isActive) {
+      if (!usuario || usuario.status !== RecordStatus.ACTIVE) {
         return null;
       }
 

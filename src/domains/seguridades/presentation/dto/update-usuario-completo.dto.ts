@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength, IsUUID, IsBoolean, IsArray } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength, IsUUID, IsArray, IsInt } from 'class-validator';
 
 /**
  * DTO para actualización completa de un usuario
@@ -52,10 +52,14 @@ export class UpdateUsuarioCompletoDto {
   @IsUUID('4', { message: 'El ID de empresa debe ser un UUID válido' })
   companyId?: string;
 
-  @ApiProperty({ description: 'Usuario activo', example: true, required: false })
+  @ApiProperty({ 
+    description: 'Estado del registro: -1=Eliminado, 0=Inactivo, 1=Activo, 2=Pendiente', 
+    example: 1, 
+    required: false 
+  })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @IsInt({ message: 'El status debe ser un número entero' })
+  status?: number;
 
   // ============================================
   // GESTIÓN DE ROLES

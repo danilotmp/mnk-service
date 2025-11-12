@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { RoleRepository } from '../../infrastructure/repositories/role.repository';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatusHelper } from '@/common/helpers/record-status.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreateRoleDto } from '../../presentation/dto/create-role.dto';
 import { UpdateRoleDto } from '../../presentation/dto/update-role.dto';
@@ -15,14 +17,28 @@ export class RoleService {
   constructor(
     private roleRepository: RoleRepository,
     private responseHelper: ResponseHelper,
+    private recordStatusHelper: RecordStatusHelper,
   ) {}
+
+  /**
+   * Formatear rol con statusDescription
+   */
+  private async formatRoleWithStatus(role: any, lang: string = 'es') {
+    return {
+      ...role,
+      ...(await this.recordStatusHelper.format(role.status, lang)),
+    };
+  }
 
   /**
    * Obtener todos los roles (sin paginación - para compatibilidad)
    */
   async findAll(companyId?: string, lang: string = 'es') {
     const roles = await this.roleRepository.findAll(companyId);
-    return await this.responseHelper.successResponse(roles, MessageCode.SUCCESS, lang);
+    const formattedRoles = await Promise.all(
+      roles.map((role) => this.formatRoleWithStatus(role, lang))
+    );
+    return await this.responseHelper.successResponse(formattedRoles, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -30,17 +46,21 @@ export class RoleService {
    */
   async findPaginated(
     paginationDto: PaginationDto,
-    filters?: { companyId?: string; isActive?: boolean; searchTerm?: string },
+    filters?: { companyId?: string; status?: number; searchTerm?: string },
     lang: string = 'es',
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
     const [roles, total] =
-      filters?.searchTerm || filters?.isActive !== undefined
+      filters?.searchTerm || filters?.status !== undefined
         ? await this.roleRepository.searchWithPagination(skip, limit, filters)
         : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId);
 
-    const paginatedResponse = PaginationHelper.createPaginatedResponse(roles, total, page, limit);
+    const formattedRoles = await Promise.all(
+      roles.map((role) => this.formatRoleWithStatus(role, lang))
+    );
+
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(formattedRoles, total, page, limit);
 
     return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
@@ -92,14 +112,15 @@ export class RoleService {
     // Crear el rol
     const role = this.roleRepository.create({
       ...createRoleDto,
-      isActive: createRoleDto.isActive !== undefined ? createRoleDto.isActive : true,
+      status: RecordStatus.ACTIVE,
       isSystem: createRoleDto.isSystem !== undefined ? createRoleDto.isSystem : false,
       displayName: createRoleDto.displayName || createRoleDto.name,
     });
 
     const savedRole = await this.roleRepository.save(role);
+    const formattedRole = await this.formatRoleWithStatus(savedRole, lang);
 
-    return await this.responseHelper.successResponse(savedRole, MessageCode.SUCCESS, lang, 201);
+    return await this.responseHelper.successResponse(formattedRole, MessageCode.SUCCESS, lang, 201);
   }
 
   /**
@@ -159,8 +180,9 @@ export class RoleService {
     // Actualizar el rol
     Object.assign(role, updateRoleDto);
     const updatedRole = await this.roleRepository.save(role);
+    const formattedRole = await this.formatRoleWithStatus(updatedRole, lang);
 
-    return await this.responseHelper.successResponse(updatedRole, MessageCode.SUCCESS, lang);
+    return await this.responseHelper.successResponse(formattedRole, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -196,7 +218,7 @@ export class RoleService {
     }
 
     // Soft delete: marcar como inactivo
-    role.isActive = false;
+    role.status = RecordStatus.DELETED;
     await this.roleRepository.save(role);
 
     return await this.responseHelper.successResponse(

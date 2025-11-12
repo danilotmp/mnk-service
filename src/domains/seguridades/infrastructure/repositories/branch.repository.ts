@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BranchEntity } from '../entities/branch.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repository de Branch
@@ -71,7 +72,7 @@ export class BranchRepository {
     take: number,
     filters?: {
       companyId?: string;
-      isActive?: boolean;
+      status?: number;
       search?: string;
       code?: string;
       name?: string;
@@ -86,9 +87,12 @@ export class BranchRepository {
       queryBuilder.andWhere('branch.companyId = :companyId', { companyId: filters.companyId });
     }
 
-    // Filtro por estado activo
-    if (filters?.isActive !== undefined) {
-      queryBuilder.andWhere('branch.isActive = :isActive', { isActive: filters.isActive });
+    // Filtro por estado
+    if (filters?.status !== undefined) {
+      queryBuilder.andWhere('branch.status = :status', { status: filters.status });
+    } else {
+      // Por defecto, excluir eliminados
+      queryBuilder.andWhere('branch.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
     }
 
     // Búsqueda global (search busca en code y name)

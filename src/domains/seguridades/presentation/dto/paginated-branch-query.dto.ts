@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsBoolean, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsUUID } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
 /**
@@ -12,11 +12,15 @@ export class PaginatedBranchQueryDto extends PaginationDto {
   @IsUUID('4', { message: 'El ID de empresa debe ser un UUID válido' })
   companyId?: string;
 
-  @ApiProperty({ description: 'Sucursal activa', example: true, required: false })
+  @ApiProperty({ 
+    description: 'Estado de la sucursal (-1: Eliminada, 0: Inactiva, 1: Activa, 2: Pendiente, 3: Suspendida)', 
+    example: 1, 
+    required: false 
+  })
   @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean({ message: 'isActive debe ser un valor booleano' })
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsInt({ message: 'status debe ser un número entero' })
+  status?: number;
 
   @ApiProperty({
     description: 'Término de búsqueda global (busca en código y nombre)',

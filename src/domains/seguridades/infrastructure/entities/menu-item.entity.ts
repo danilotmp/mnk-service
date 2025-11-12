@@ -9,6 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { PermissionEntity } from './permission.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de MenuItem
@@ -53,8 +54,8 @@ export class MenuItemEntity {
   @Column({ default: true })
   isPublic: boolean; // Si es público (no requiere autenticación)
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @Column({ default: 0 })
   order: number; // Orden de aparición en el menú

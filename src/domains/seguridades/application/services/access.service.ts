@@ -9,7 +9,7 @@ interface AccessFilters {
   userId?: string;
   roleId?: string;
   branchId?: string;
-  isActive?: boolean;
+  status?: number;
 }
 
 @Injectable()

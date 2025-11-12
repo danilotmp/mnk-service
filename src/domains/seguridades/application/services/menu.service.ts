@@ -3,6 +3,7 @@ import { MenuItemRepository } from '../../infrastructure/repositories/menu-item.
 import { RoleRepository } from '../../infrastructure/repositories/role.repository';
 import { AuthorizationService } from './authorization.service';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 
 /**
@@ -107,7 +108,7 @@ export class MenuService {
   async getMenuByRole(roleId: string, lang: string = 'es'): Promise<MenuItem[]> {
     // 1. Verificar que el rol existe
     const role = await this.roleRepository.findOne(roleId);
-    if (!role || !role.isActive) {
+    if (!role || role.status !== RecordStatus.ACTIVE) {
       throw new NotFoundException(
         await this.responseHelper.errorResponse(
           MessageCode.ROLE_NOT_FOUND,

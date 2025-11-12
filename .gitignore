@@ -46,3 +46,6 @@ lerna-debug.log*
 *.sqlite
 *.sqlite3
 
+# Temporary integration documentation
+documents/LATEST_CHANGES_FOR_FRONTEND.md
+

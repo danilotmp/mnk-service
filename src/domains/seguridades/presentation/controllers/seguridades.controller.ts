@@ -553,10 +553,10 @@ export class SeguridadesController {
   @ApiOperation({ summary: 'Obtener accesos (usuario-rol) con paginación' })
   async getAccesses(@Query() queryDto: PaginatedAccessQueryDto, @Request() req) {
     const lang = req.headers['accept-language'] || 'es';
-    const { page, limit, userId, roleId, branchId, isActive } = queryDto;
+    const { page, limit, userId, roleId, branchId, status } = queryDto;
     return this.accessService.findPaginated(
       { page, limit },
-      { userId, roleId, branchId, isActive },
+      { userId, roleId, branchId, status },
       lang,
     );
   }

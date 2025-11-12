@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { UsuarioEntity } from './usuario.entity';
 import { RoleEntity } from './role.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Entidad de Relación Usuario-Rol
@@ -28,8 +29,8 @@ export class UserRoleEntity {
   @Column({ name: 'branch_id', nullable: true })
   branchId: string; // Rol específico para una sucursal (opcional)
 
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ default: RecordStatus.ACTIVE })
+  status: number;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

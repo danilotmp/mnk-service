@@ -7,5 +7,10 @@
   "PROFILE_UPDATED": "Profile updated successfully",
   "LOGOUT_SUCCESS": "Logout successful",
   "RESOURCE_CREATED": "Resource created successfully",
-  "RESOURCE_UPDATED": "Resource updated successfully"
+  "RESOURCE_UPDATED": "Resource updated successfully",
+  "RECORD_STATUS_DELETED": "Deleted",
+  "RECORD_STATUS_INACTIVE": "Inactive",
+  "RECORD_STATUS_ACTIVE": "Active",
+  "RECORD_STATUS_PENDING": "Pending",
+  "RECORD_STATUS_SUSPENDED": "Suspended"
 }

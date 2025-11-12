@@ -6,8 +6,9 @@ import {
   MinLength,
   IsOptional,
   IsUUID,
-  IsBoolean,
   IsArray,
+  IsNumber,
+  IsInt,
 } from 'class-validator';
 
 /**
@@ -45,10 +46,15 @@ export class CreateUsuarioDto {
   @IsNotEmpty({ message: 'El ID de empresa es obligatorio' })
   companyId: string;
 
-  @ApiProperty({ description: 'Usuario activo', example: true, required: false, default: true })
+  @ApiProperty({ 
+    description: 'Estado del registro: -1=Eliminado, 0=Inactivo, 1=Activo, 2=Pendiente', 
+    example: 1, 
+    required: false, 
+    default: 1 
+  })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @IsInt({ message: 'El status debe ser un número entero' })
+  status?: number;
 
   @ApiProperty({
     description: 'ID del rol principal a asignar al usuario',

@@ -356,9 +356,9 @@
                   "disabled": true
                 },
                 {
-                  "key": "isActive",
+                  "key": "status",
                   "value": "",
-                  "description": "Filtrar por estado activo (opcional)",
+                  "description": "Filtrar por estado: -1=Eliminado, 0=Inactivo, 1=Activo (opcional)",
                   "disabled": true
                 },
                 {
@@ -431,7 +431,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"phone\": \"+593987654321\",\n  \"companyId\": \"{{companyId}}\",\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"],\n  \"isActive\": true\n}"
+              "raw": "{\n  \"email\": \"nuevo@mnksolutions.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"phone\": \"+593987654321\",\n  \"companyId\": \"{{companyId}}\",\n  \"roleId\": \"{{roleId}}\",\n  \"branchIds\": [\"{{branchId}}\"],\n  \"status\": 1\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/seguridades/usuarios",
@@ -652,9 +652,9 @@
                   "disabled": true
                 },
                 {
-                  "key": "isActive",
+                  "key": "status",
                   "value": "",
-                  "description": "Filtrar por estado activo (opcional)",
+                  "description": "Filtrar por estado: -1=Eliminado, 0=Inactivo, 1=Activo (opcional)",
                   "disabled": true
                 },
                 {
@@ -859,9 +859,9 @@
                   "disabled": true
                 },
                 {
-                  "key": "isActive",
+                  "key": "status",
                   "value": "",
-                  "description": "Filtrar por estado activo (opcional)",
+                  "description": "Filtrar por estado: -1=Eliminado, 0=Inactivo, 1=Activo (opcional)",
                   "disabled": true
                 },
                 {

@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { BranchRepository } from '../../infrastructure/repositories/branch.repository';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatusHelper } from '@/common/helpers/record-status.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { PaginationHelper } from '@/common/helpers/pagination.helper';
@@ -17,18 +19,20 @@ export class BranchService {
   constructor(
     private branchRepository: BranchRepository,
     private responseHelper: ResponseHelper,
+    private recordStatusHelper: RecordStatusHelper,
   ) {}
+
+  private async formatBranchWithStatus(branch: any, lang: string = 'es') {
+    return { ...branch, ...(await this.recordStatusHelper.format(branch.status, lang)) };
+  }
 
   /**
    * Obtener todas las sucursales (sin paginación)
    */
   async findAll(lang: string = 'es') {
     const branches = await this.branchRepository.findAll();
-    return await this.responseHelper.successResponse(
-      branches,
-      MessageCode.SUCCESS,
-      lang,
-    );
+    const formatted = await Promise.all(branches.map(b => this.formatBranchWithStatus(b, lang)));
+    return await this.responseHelper.successResponse(formatted, MessageCode.SUCCESS, lang);
   }
 
   /**
@@ -74,12 +78,8 @@ export class BranchService {
       ? await this.branchRepository.searchWithPagination(skip, limit, filters)
       : await this.branchRepository.findWithPagination(skip, limit);
 
-    const paginatedResponse = PaginationHelper.createPaginatedResponse(
-      branches,
-      total,
-      page,
-      limit,
-    );
+    const formatted = await Promise.all(branches.map(b => this.formatBranchWithStatus(b, lang)));
+    const paginatedResponse = PaginationHelper.createPaginatedResponse(formatted, total, page, limit);
 
     return await this.responseHelper.successResponse(paginatedResponse, MessageCode.SUCCESS, lang);
   }
@@ -203,7 +203,7 @@ export class BranchService {
     }
 
     // Soft delete: marcar como inactivo
-    branch.isActive = false;
+    branch.status = RecordStatus.DELETED;
     await this.branchRepository.save(branch);
 
     return await this.responseHelper.successResponse(

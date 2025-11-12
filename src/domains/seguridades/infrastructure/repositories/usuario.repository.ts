@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { UsuarioEntity } from '../entities/usuario.entity';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 
 /**
  * Repository de Usuario
@@ -66,7 +67,7 @@ export class UsuarioRepository {
   }
 
   /**
-   * Encontrar usuarios con paginación
+   * Encontrar usuarios con paginación (excluye eliminados por defecto)
    */
   async findWithPagination(skip: number, take: number): Promise<[UsuarioEntity[], number]> {
     try {
@@ -75,6 +76,7 @@ export class UsuarioRepository {
       queryBuilder
         .leftJoinAndSelect('usuario.userRoles', 'userRoles')
         .leftJoinAndSelect('userRoles.role', 'role')
+        .where('usuario.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED })
         .orderBy('usuario.createdAt', 'DESC')
         .skip(skip)
         .take(take);
@@ -84,6 +86,7 @@ export class UsuarioRepository {
       console.error('[UsuarioRepository.findWithPagination] Error:', error);
       // Fallback sin relaciones
       return this.repository.findAndCount({
+        where: { status: Not(RecordStatus.DELETED) },
         skip,
         take,
         order: { createdAt: 'DESC' },
@@ -92,14 +95,14 @@ export class UsuarioRepository {
   }
 
   /**
-   * Buscar usuarios con filtros y paginación
+   * Buscar usuarios con filtros y paginación (excluye eliminados por defecto)
    */
   async searchWithPagination(
     skip: number,
     take: number,
     filters?: {
       companyId?: string;
-      isActive?: boolean;
+      status?: number;
       searchTerm?: string;
       email?: string;
       firstName?: string;
@@ -113,14 +116,19 @@ export class UsuarioRepository {
       queryBuilder.leftJoinAndSelect('usuario.userRoles', 'userRoles');
       queryBuilder.leftJoinAndSelect('userRoles.role', 'role');
 
+      // Excluir eliminados por defecto (a menos que se solicite explícitamente)
+      if (filters?.status === undefined) {
+        queryBuilder.where('usuario.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
+      }
+
       // Filtro por companyId
       if (filters?.companyId) {
         queryBuilder.andWhere('usuario.companyId = :companyId', { companyId: filters.companyId });
       }
 
-      // Filtro por estado activo
-      if (filters?.isActive !== undefined) {
-        queryBuilder.andWhere('usuario.isActive = :isActive', { isActive: filters.isActive });
+      // Filtro por estado
+      if (filters?.status !== undefined) {
+        queryBuilder.andWhere('usuario.status = :status', { status: filters.status });
       }
 
       // Búsqueda global (searchTerm busca en email, firstName y lastName)
@@ -153,11 +161,16 @@ export class UsuarioRepository {
       // Fallback sin relaciones
       const queryBuilder = this.repository.createQueryBuilder('usuario');
       
+      // Excluir eliminados
+      if (filters?.status === undefined) {
+        queryBuilder.where('usuario.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
+      }
+      
       if (filters?.companyId) {
         queryBuilder.andWhere('usuario.companyId = :companyId', { companyId: filters.companyId });
       }
-      if (filters?.isActive !== undefined) {
-        queryBuilder.andWhere('usuario.isActive = :isActive', { isActive: filters.isActive });
+      if (filters?.status !== undefined) {
+        queryBuilder.andWhere('usuario.status = :status', { status: filters.status });
       }
       
       queryBuilder.orderBy('usuario.createdAt', 'DESC');

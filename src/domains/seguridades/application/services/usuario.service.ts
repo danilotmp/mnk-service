@@ -9,6 +9,8 @@ import { UserRoleRepository } from '../../infrastructure/repositories/user-role.
 import { BranchRepository } from '../../infrastructure/repositories/branch.repository';
 import { RoleService } from './role.service';
 import { ResponseHelper } from '@/common/messages/response.helper';
+import { RecordStatusHelper } from '@/common/helpers/record-status.helper';
+import { RecordStatus } from '@/common/enums/record-status.enum';
 import { MessageCode } from '@/common/messages/message-codes';
 import { CreateUsuarioDto } from '../../presentation/dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../../presentation/dto/update-usuario.dto';
@@ -28,19 +30,20 @@ export class UsuarioService {
     private branchRepository: BranchRepository,
     private roleService: RoleService,
     private responseHelper: ResponseHelper,
+    private recordStatusHelper: RecordStatusHelper,
   ) {}
 
   /**
-   * Formatear usuario con roles
+   * Formatear usuario con roles y status
    * Método helper privado para dar formato consistente
    */
-  private formatUserWithRoles(usuario: any) {
+  private async formatUserWithRoles(usuario: any, lang: string = 'es') {
     const { password, userRoles, ...userWithoutPassword } = usuario;
     
     // Formatear roles si existen
     const roles = userRoles && userRoles.length > 0
       ? userRoles
-          .filter((ur) => ur && ur.isActive && ur.role)  // ✅ Validar que role existe
+          .filter((ur) => ur && ur.status === RecordStatus.ACTIVE && ur.role)  // ✅ Validar que role existe
           .map((ur) => ({
             id: ur.role.id,
             name: ur.role.name,
@@ -52,6 +55,7 @@ export class UsuarioService {
 
     return {
       ...userWithoutPassword,
+      ...(await this.recordStatusHelper.format(usuario.status, lang)),
       roles,
     };
   }
@@ -111,7 +115,7 @@ export class UsuarioService {
     paginationDto: PaginationDto,
     filters?: { 
       companyId?: string; 
-      isActive?: boolean; 
+      status?: number; 
       searchTerm?: string;
       email?: string;
       firstName?: string;
@@ -125,7 +129,7 @@ export class UsuarioService {
     const hasFilters = filters && (
       filters.searchTerm || 
       filters.companyId || 
-      filters.isActive !== undefined ||
+      filters.status !== undefined ||
       filters.email ||
       filters.firstName ||
       filters.lastName
@@ -136,7 +140,9 @@ export class UsuarioService {
       : await this.usuarioRepository.findWithPagination(skip, limit);
 
     // Formatear usuarios con roles
-    const usuariosFormateados = usuarios.map((usuario) => this.formatUserWithRoles(usuario));
+    const usuariosFormateados = await Promise.all(
+      usuarios.map((usuario) => this.formatUserWithRoles(usuario, lang))
+    );
 
     const paginatedResponse = PaginationHelper.createPaginatedResponse(
       usuariosFormateados,
@@ -165,7 +171,7 @@ export class UsuarioService {
     }
 
     // Formatear usuario con roles
-    const usuarioFormateado = this.formatUserWithRoles(usuario);
+    const usuarioFormateado = await this.formatUserWithRoles(usuario, lang);
 
     return await this.responseHelper.successResponse(
       usuarioFormateado,
@@ -244,7 +250,7 @@ export class UsuarioService {
     const usuario = this.usuarioRepository.create({
       ...usuarioData,
       password: hashedPassword,
-      isActive: usuarioData.isActive !== undefined ? usuarioData.isActive : true,
+      status: usuarioData.status !== undefined ? usuarioData.status : RecordStatus.ACTIVE,
     });
 
     const savedUsuario = await this.usuarioRepository.save(usuario);
@@ -255,7 +261,7 @@ export class UsuarioService {
         userId: savedUsuario.id,
         roleId: roleId,
         branchId: null,
-        isActive: true,
+        status: RecordStatus.ACTIVE,
       });
     }
 
@@ -275,7 +281,7 @@ export class UsuarioService {
 
     // Obtener el usuario con roles para retornar
     const usuarioConRoles = await this.usuarioRepository.findOne(savedUsuario.id);
-    const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
+    const usuarioFormateado = await this.formatUserWithRoles(usuarioConRoles, lang);
 
     return await this.responseHelper.successResponse(
       usuarioFormateado,
@@ -355,8 +361,8 @@ export class UsuarioService {
       );
     }
 
-    // Soft delete: marcar como inactivo
-    usuario.isActive = false;
+    // Soft delete: marcar como eliminado
+    usuario.status = RecordStatus.DELETED;
     await this.usuarioRepository.save(usuario);
 
     return await this.responseHelper.successResponse(
@@ -413,7 +419,7 @@ export class UsuarioService {
     if (updateDto.lastName) usuario.lastName = updateDto.lastName;
     if (updateDto.phone !== undefined) usuario.phone = updateDto.phone;
     if (updateDto.companyId) usuario.companyId = updateDto.companyId;
-    if (updateDto.isActive !== undefined) usuario.isActive = updateDto.isActive;
+    if (updateDto.status !== undefined) usuario.status = updateDto.status;
 
     // 2. Gestionar rol (si se proporciona)
     if (updateDto.roleId) {
@@ -431,27 +437,20 @@ export class UsuarioService {
       }
 
       try {
-        console.log(`[updateCompleto] Actualizando rol para usuario: ${id}`);
-        console.log(`[updateCompleto] Nuevo roleId: ${updateDto.roleId}`);
-        
         // Eliminar roles actuales del usuario
         await this.userRoleRepository.deleteByUserId(id);
-        console.log(`[updateCompleto] Roles antiguos eliminados para usuario: ${id}`);
 
         // Pequeña espera para asegurar que el delete se complete
         await new Promise(resolve => setTimeout(resolve, 50));
 
         // Asignar el nuevo rol con todos los campos necesarios
-        const newUserRole = await this.userRoleRepository.create({
+        await this.userRoleRepository.create({
           userId: id,
           roleId: updateDto.roleId,
           branchId: null,
-          isActive: true,
+          status: RecordStatus.ACTIVE,
         });
-        console.log(`[updateCompleto] Nuevo rol creado:`, newUserRole);
       } catch (error) {
-        console.error('[updateCompleto] Error al actualizar rol:', error);
-        console.error('[updateCompleto] Stack trace:', error.stack);
         throw new BadRequestException(
           await this.responseHelper.errorResponse(
             MessageCode.BUSINESS_RULE_VIOLATION,
@@ -510,23 +509,17 @@ export class UsuarioService {
     }
 
     // 4. Guardar usuario actualizado
-    console.log('[updateCompleto] Guardando datos básicos del usuario...');
     await this.usuarioRepository.save(usuario);
-    console.log('[updateCompleto] Usuario guardado correctamente');
 
     // 5. Recargar el usuario con todas las relaciones de forma explícita
     try {
       // Esperar un momento para que SQLite sincronice
-      console.log('[updateCompleto] Esperando sincronización de BD...');
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Obtener el usuario recargado con relaciones
-      console.log('[updateCompleto] Recargando usuario con relaciones, userId:', id);
       const usuarioConRoles = await this.usuarioRepository.findOne(id);
-      console.log('[updateCompleto] Usuario recargado:', usuarioConRoles ? 'Sí' : 'No');
       
       if (!usuarioConRoles) {
-        console.error('[updateCompleto] Usuario no encontrado después de guardar!');
         throw new NotFoundException(
           await this.responseHelper.errorResponse(
             MessageCode.USER_NOT_FOUND,
@@ -537,9 +530,7 @@ export class UsuarioService {
         );
       }
 
-      console.log('[updateCompleto] Formateando usuario...');
-      const usuarioFormateado = this.formatUserWithRoles(usuarioConRoles);
-      console.log('[updateCompleto] Usuario formateado correctamente');
+      const usuarioFormateado = await this.formatUserWithRoles(usuarioConRoles, lang);
 
       return await this.responseHelper.successResponse(
         usuarioFormateado,
@@ -548,11 +539,6 @@ export class UsuarioService {
       );
     } catch (error) {
       // Si falla al cargar con relaciones, retornar sin roles
-      console.error('[updateCompleto] Error al cargar usuario con roles:', error);
-      console.error('[updateCompleto] Error message:', error.message);
-      console.error('[updateCompleto] Error stack:', error.stack);
-      
-      // Retornar el usuario sin roles como fallback
       const { password, userRoles, ...userWithoutPassword } = usuario;
       
       return await this.responseHelper.successResponse(
@@ -595,7 +581,7 @@ export class UsuarioService {
       name: ur.role.name,
       displayName: ur.role.displayName,
       description: ur.role.description,
-      isActive: ur.isActive,
+      status: ur.status,
       assignedAt: ur.createdAt,
     }));
 
