@@ -29,11 +29,11 @@ export class RoleEntity {
   @JoinColumn({ name: 'company_id' })
   company: CompanyEntity;
 
-  @Column()
-  name: string; // 'admin', 'usuario', 'editor'
+  @Column({ unique: true })
+  code: string; // 'ADMIN', 'USUARIO', 'EDITOR' - Código único en mayúsculas
 
-  @Column({ nullable: true })
-  displayName: string; // 'Administrador', 'Usuario', 'Editor'
+  @Column({ unique: true })
+  name: string; // 'Administrador', 'Usuario', 'Editor' - Nombre único para mostrar
 
   @Column({ nullable: true })
   description: string;

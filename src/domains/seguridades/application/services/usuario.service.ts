@@ -46,8 +46,8 @@ export class UsuarioService {
           .filter((ur) => ur && ur.status === RecordStatus.ACTIVE && ur.role)  // ✅ Validar que role existe
           .map((ur) => ({
             id: ur.role.id,
+            code: ur.role.code,
             name: ur.role.name,
-            displayName: ur.role.displayName,
             description: ur.role.description,
             assignedAt: ur.createdAt,
           }))
@@ -578,8 +578,8 @@ export class UsuarioService {
 
     const roles = userRoles.map(ur => ({
       id: ur.role.id,
+      code: ur.role.code,
       name: ur.role.name,
-      displayName: ur.role.displayName,
       description: ur.role.description,
       status: ur.status,
       assignedAt: ur.createdAt,

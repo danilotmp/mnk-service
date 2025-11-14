@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID, IsOptional, IsBoolean, IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
 
 /**
  * DTO para crear un nuevo rol
@@ -10,15 +11,15 @@ export class CreateRoleDto {
   @IsNotEmpty({ message: 'El ID de empresa es obligatorio' })
   companyId: string;
 
-  @ApiProperty({ description: 'Nombre del rol (código único)', example: 'admin' })
+  @ApiProperty({ description: 'Código del rol (se guardará en mayúsculas)', example: 'ADMIN' })
+  @IsString()
+  @IsNotEmpty({ message: 'El código del rol es obligatorio' })
+  code: string;
+
+  @ApiProperty({ description: 'Nombre del rol para mostrar', example: 'Administrador' })
   @IsString()
   @IsNotEmpty({ message: 'El nombre del rol es obligatorio' })
   name: string;
-
-  @ApiProperty({ description: 'Nombre para mostrar', example: 'Administrador', required: false })
-  @IsOptional()
-  @IsString()
-  displayName?: string;
 
   @ApiProperty({
     description: 'Descripción del rol',
@@ -29,10 +30,16 @@ export class CreateRoleDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Rol activo', example: true, required: false, default: true })
+  @ApiProperty({ 
+    description: 'Estado del rol (-1: Eliminado, 0: Inactivo, 1: Activo, 2: Pendiente, 3: Suspendido)', 
+    example: 1, 
+    required: false,
+    default: 1
+  })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @Type(() => Number)
+  @IsInt({ message: 'status debe ser un número entero' })
+  status?: number;
 
   @ApiProperty({
     description: 'Es rol del sistema',
@@ -41,6 +48,7 @@ export class CreateRoleDto {
     default: false,
   })
   @IsOptional()
+  @Type(() => Boolean)
   @IsBoolean()
   isSystem?: boolean;
 }

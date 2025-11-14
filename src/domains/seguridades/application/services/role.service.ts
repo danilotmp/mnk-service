@@ -21,11 +21,38 @@ export class RoleService {
   ) {}
 
   /**
-   * Formatear rol con statusDescription
+   * Formatear rol con statusDescription y permisos
    */
   private async formatRoleWithStatus(role: any, lang: string = 'es') {
+    const permissions =
+      role?.rolePermissions && Array.isArray(role.rolePermissions)
+        ? await Promise.all(
+            role.rolePermissions
+              .filter((rp) => rp?.permission)
+              .map(async (rp) => {
+                const permission = rp.permission;
+                return {
+                  id: permission.id,
+                  code: permission.code,
+                  name: permission.name,
+                  description: permission.description,
+                  type: permission.type,
+                  resource: permission.resource,
+                  action: permission.action,
+                  route: permission.route,
+                  isPublic: permission.isPublic,
+                  ...(await this.recordStatusHelper.format(permission.status, lang)),
+                };
+              }),
+          )
+        : [];
+
+    const { rolePermissions, ...roleWithoutRelations } = role;
+
     return {
-      ...role,
+      ...roleWithoutRelations,
+      permissions,
+      permissionsCount: permissions.length,
       ...(await this.recordStatusHelper.format(role.status, lang)),
     };
   }
@@ -46,15 +73,15 @@ export class RoleService {
    */
   async findPaginated(
     paginationDto: PaginationDto,
-    filters?: { companyId?: string; status?: number; searchTerm?: string },
+    filters?: { companyId?: string; status?: number; searchTerm?: string; isSystem?: boolean },
     lang: string = 'es',
   ) {
     const { page, limit, skip } = PaginationHelper.normalizeParams(paginationDto);
 
     const [roles, total] =
-      filters?.searchTerm || filters?.status !== undefined
+      filters?.searchTerm || filters?.status !== undefined || filters?.isSystem !== undefined
         ? await this.roleRepository.searchWithPagination(skip, limit, filters)
-        : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId);
+        : await this.roleRepository.findWithPagination(skip, limit, filters?.companyId, filters?.isSystem);
 
     const formattedRoles = await Promise.all(
       roles.map((role) => this.formatRoleWithStatus(role, lang))
@@ -88,12 +115,33 @@ export class RoleService {
    * Crear un nuevo rol
    */
   async create(createRoleDto: CreateRoleDto, lang: string = 'es') {
-    // Verificar que el nombre del rol no exista en la misma empresa
-    const existingRole = await this.roleRepository.findByCode(
+    // Verificar que el código del rol no exista
+    const existingRoleByCode = await this.roleRepository.findByCode(
+      createRoleDto.code,
+      createRoleDto.companyId,
+    );
+    if (existingRoleByCode) {
+      throw new ConflictException(
+        await this.responseHelper.errorResponse(
+          MessageCode.RESOURCE_CONFLICT,
+          lang,
+          {
+            error: 'ROLE_CODE_EXISTS',
+            code: createRoleDto.code,
+            companyId: createRoleDto.companyId,
+            message: 'El código del rol ya existe',
+          },
+          409,
+        ),
+      );
+    }
+
+    // Verificar que el nombre del rol no exista
+    const existingRoleByName = await this.roleRepository.findByName(
       createRoleDto.name,
       createRoleDto.companyId,
     );
-    if (existingRole) {
+    if (existingRoleByName) {
       throw new ConflictException(
         await this.responseHelper.errorResponse(
           MessageCode.RESOURCE_CONFLICT,
@@ -102,7 +150,7 @@ export class RoleService {
             error: 'ROLE_NAME_EXISTS',
             name: createRoleDto.name,
             companyId: createRoleDto.companyId,
-            message: 'Role name already exists for this company',
+            message: 'El nombre del rol ya existe',
           },
           409,
         ),
@@ -112,9 +160,9 @@ export class RoleService {
     // Crear el rol
     const role = this.roleRepository.create({
       ...createRoleDto,
-      status: RecordStatus.ACTIVE,
+      code: createRoleDto.code.toUpperCase(), // Normalizar código a mayúsculas
+      status: createRoleDto.status !== undefined ? createRoleDto.status : RecordStatus.ACTIVE,
       isSystem: createRoleDto.isSystem !== undefined ? createRoleDto.isSystem : false,
-      displayName: createRoleDto.displayName || createRoleDto.name,
     });
 
     const savedRole = await this.roleRepository.save(role);
@@ -139,29 +187,35 @@ export class RoleService {
       );
     }
 
-    // Si es un rol del sistema, no permitir ciertos cambios
-    if (role.isSystem && updateRoleDto.name) {
-      throw new ConflictException(
-        await this.responseHelper.errorResponse(
-          MessageCode.BUSINESS_RULE_VIOLATION,
-          lang,
-          {
-            error: 'SYSTEM_ROLE_PROTECTED',
-            roleId: id,
-            message: 'System roles cannot have their name modified',
-          },
-          409,
-        ),
-      );
+    // Validar que el código no esté duplicado (si se está cambiando)
+    if (updateRoleDto.code) {
+      const normalizedCode = updateRoleDto.code.toUpperCase();
+      if (normalizedCode !== role.code) {
+        const existingRoleByCode = await this.roleRepository.findByCode(normalizedCode, role.companyId);
+        if (existingRoleByCode && existingRoleByCode.id !== id) {
+          throw new ConflictException(
+            await this.responseHelper.errorResponse(
+              MessageCode.RESOURCE_CONFLICT,
+              lang,
+              {
+                error: 'ROLE_CODE_EXISTS',
+                code: normalizedCode,
+                companyId: role.companyId,
+                message: 'El código del rol ya existe',
+              },
+              409,
+            ),
+          );
+        }
+        // Normalizar código a mayúsculas
+        updateRoleDto.code = normalizedCode;
+      }
     }
 
-    // Si se actualiza el nombre, verificar que no exista en la misma empresa
+    // Validar que el nombre no esté duplicado (si se está cambiando)
     if (updateRoleDto.name && updateRoleDto.name !== role.name) {
-      const existingRole = await this.roleRepository.findByCode(
-        updateRoleDto.name,
-        updateRoleDto.companyId || role.companyId,
-      );
-      if (existingRole) {
+      const existingRoleByName = await this.roleRepository.findByName(updateRoleDto.name, role.companyId);
+      if (existingRoleByName && existingRoleByName.id !== id) {
         throw new ConflictException(
           await this.responseHelper.errorResponse(
             MessageCode.RESOURCE_CONFLICT,
@@ -169,7 +223,8 @@ export class RoleService {
             {
               error: 'ROLE_NAME_EXISTS',
               name: updateRoleDto.name,
-              message: 'Role name already exists for this company',
+              companyId: role.companyId,
+              message: 'El nombre del rol ya existe',
             },
             409,
           ),

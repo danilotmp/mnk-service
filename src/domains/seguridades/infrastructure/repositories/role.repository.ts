@@ -17,13 +17,15 @@ export class RoleRepository {
   findAll(companyId?: string): Promise<RoleEntity[]> {
     const query = this.repository
       .createQueryBuilder('role')
+      .leftJoinAndSelect('role.rolePermissions', 'rolePermissions')
+      .leftJoinAndSelect('rolePermissions.permission', 'permission')
       .where('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
 
     if (companyId) {
       query.andWhere('role.companyId = :companyId', { companyId });
     }
 
-    return query.getMany();
+    return query.distinct(true).getMany();
   }
 
   /**
@@ -33,16 +35,23 @@ export class RoleRepository {
     skip: number,
     take: number,
     companyId?: string,
+    isSystem?: boolean,
   ): Promise<[RoleEntity[], number]> {
     const queryBuilder = this.repository
       .createQueryBuilder('role')
+      .leftJoinAndSelect('role.rolePermissions', 'rolePermissions')
+      .leftJoinAndSelect('rolePermissions.permission', 'permission')
       .where('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
 
     if (companyId) {
       queryBuilder.andWhere('role.companyId = :companyId', { companyId });
     }
 
-    queryBuilder.orderBy('role.createdAt', 'DESC');
+    if (isSystem !== undefined) {
+      queryBuilder.andWhere('role.isSystem = :isSystem', { isSystem });
+    }
+
+    queryBuilder.distinct(true).orderBy('role.createdAt', 'DESC');
     queryBuilder.skip(skip).take(take);
 
     return queryBuilder.getManyAndCount();
@@ -58,9 +67,13 @@ export class RoleRepository {
       companyId?: string;
       status?: number;
       searchTerm?: string;
+      isSystem?: boolean;
     },
   ): Promise<[RoleEntity[], number]> {
-    const queryBuilder = this.repository.createQueryBuilder('role');
+    const queryBuilder = this.repository
+      .createQueryBuilder('role')
+      .leftJoinAndSelect('role.rolePermissions', 'rolePermissions')
+      .leftJoinAndSelect('rolePermissions.permission', 'permission');
 
     if (filters?.companyId) {
       queryBuilder.andWhere('role.companyId = :companyId', { companyId: filters.companyId });
@@ -73,14 +86,18 @@ export class RoleRepository {
       queryBuilder.andWhere('role.status != :deletedStatus', { deletedStatus: RecordStatus.DELETED });
     }
 
+    if (filters?.isSystem !== undefined) {
+      queryBuilder.andWhere('role.isSystem = :isSystem', { isSystem: filters.isSystem });
+    }
+
     if (filters?.searchTerm) {
       queryBuilder.andWhere(
-        '(role.name LIKE :searchTerm OR role.displayName LIKE :searchTerm OR role.description LIKE :searchTerm)',
+        '(role.code LIKE :searchTerm OR role.name LIKE :searchTerm OR role.description LIKE :searchTerm)',
         { searchTerm: `%${filters.searchTerm}%` },
       );
     }
 
-    queryBuilder.orderBy('role.createdAt', 'DESC');
+    queryBuilder.distinct(true).orderBy('role.createdAt', 'DESC');
     queryBuilder.skip(skip).take(take);
 
     return queryBuilder.getManyAndCount();
@@ -94,7 +111,20 @@ export class RoleRepository {
   }
 
   findByCode(code: string, companyId?: string): Promise<RoleEntity | null> {
-    const query = this.repository.createQueryBuilder('role').where('role.name = :code', { code });
+    const query = this.repository.createQueryBuilder('role').where('role.code = :code', { code: code.toUpperCase() });
+
+    if (companyId) {
+      query.andWhere('role.companyId = :companyId', { companyId });
+    }
+
+    return query.getOne();
+  }
+
+  /**
+   * Buscar rol por nombre
+   */
+  findByName(name: string, companyId?: string): Promise<RoleEntity | null> {
+    const query = this.repository.createQueryBuilder('role').where('role.name = :name', { name });
 
     if (companyId) {
       query.andWhere('role.companyId = :companyId', { companyId });

@@ -364,14 +364,14 @@ async function seed() {
     // Rol Admin
     const adminRole = roleRepository.create({
       companyId: savedCompany.id,
-      name: 'admin',
-      displayName: 'Administrador',
+      code: 'ADMIN',
+      name: 'Administrador',
       description: 'Rol de administrador con todos los permisos',
       status: RecordStatus.ACTIVE,
       isSystem: true,
     });
     const savedAdminRole = await roleRepository.save(adminRole);
-    console.log(`✅ Rol creado: ${savedAdminRole.displayName}`);
+    console.log(`✅ Rol creado: ${savedAdminRole.name}`);
 
     // Asignar todos los permisos al rol admin
     for (const permission of [...savedPagePermissions, ...savedActionPermissions]) {
@@ -386,14 +386,14 @@ async function seed() {
     // Rol Usuario
     const userRole = roleRepository.create({
       companyId: savedCompany.id,
-      name: 'usuario',
-      displayName: 'Usuario',
+      code: 'USUARIO',
+      name: 'Usuario',
       description: 'Rol de usuario básico',
       status: RecordStatus.ACTIVE,
       isSystem: true,
     });
     const savedUserRole = await roleRepository.save(userRole);
-    console.log(`✅ Rol creado: ${savedUserRole.displayName}`);
+    console.log(`✅ Rol creado: ${savedUserRole.name}`);
 
     // Asignar permisos básicos al rol usuario (solo lectura)
     const userPermissions = [

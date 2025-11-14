@@ -1481,6 +1481,37 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Menú",
+      "item": [
+        {
+          "name": "Obtener Menú Dinámico",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept-Language",
+                "value": "es",
+                "description": "Idioma de las descripciones y etiquetas (es, en, pt)",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/seguridades/menu",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seguridades", "menu"]
+            },
+            "description": "Obtener el menú dinámico según los permisos del usuario autenticado.\n\n- Requiere token JWT válido.\n- Combina los permisos activos de todos los roles del usuario.\n- Retorna únicamente los items con `status` diferente de Eliminado.\n- Cambia el idioma de `statusDescription` usando `Accept-Language`."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

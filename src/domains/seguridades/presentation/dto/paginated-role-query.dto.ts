@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsInt, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsString, IsInt, IsUUID, IsBoolean } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 
 /**
@@ -23,7 +23,32 @@ export class PaginatedRoleQueryDto extends PaginationDto {
   status?: number;
 
   @ApiProperty({
-    description: 'Término de búsqueda (busca en name, displayName y description)',
+    description: 'Indica si el rol es del sistema',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'number') {
+      return value !== 0;
+    }
+    if (typeof value === 'string') {
+      return value.toLowerCase() === 'true' || value === '1';
+    }
+    return Boolean(value);
+  })
+  @IsBoolean({ message: 'isSystem debe ser un valor booleano' })
+  isSystem?: boolean;
+
+  @ApiProperty({
+    description: 'Término de búsqueda (busca en code, name y description)',
     example: 'admin',
     required: false,
   })
